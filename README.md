@@ -55,7 +55,7 @@ The name "VEXIS" is derived from the Latin word *Vexillum* (military standard/gu
 
 1. Clone this repository:
 ```bash
-git clone https://github.com/YOUR_USERNAME/VEXIS-1.git
+git clone https://github.com/AInohogosya/VEXIS-1.git
 cd VEXIS-1
 ```
 

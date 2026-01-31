@@ -1,395 +1,211 @@
-# AI Agent System
+# VEXIS-1
 
-A production-ready vision-based AI agent system that automates GUI interactions through screenshot analysis and command execution.
+VEXIS-1 is a powerful vision-based AI agent for GUI automation that uses computer vision to understand and interact with graphical user interfaces.
 
-## 🎯 Project Overview
+## 🏛️ Name Origin
 
-This system implements a comprehensive AI agent that can:
-- **See**: Capture and analyze screenshots in real-time
-- **Think**: Use AI models to understand visual context and user instructions
-- **Act**: Execute GUI automation commands with intelligent fallbacks
-- **Learn**: Adapt strategies based on performance and context
+The name "VEXIS" is derived from the Latin word *Vexillum* (military standard/guiding flag). It represents a "flag bearer" that raises the user's intentions and guides the system through chaotic OS environments.
 
-## 🏗️ Architecture
+## 🤖 Features
 
-The system follows a **4-layer architecture**:
-
-### 1. User Interface Layer
-- **Main Application**: Core CLI interface with comprehensive options
-- **Enhanced Application**: Advanced features with conversation history
-- **Shell Wrapper**: Safety validation and convenience wrapper
-
-### 2. Core Processing Layer
-- **Task Generation Engine**: Breaks down instructions into actionable steps
-- **Command Parser**: Converts AI responses into executable commands
-- **Execution Engine**: Executes commands with retry logic and fallbacks
-- **Adaptive Strategy Manager**: Intelligent strategy selection and optimization
-
-### 3. Platform Abstraction Layer
-- **Screenshot Capture**: Cross-platform capture with multiple fallback methods
-- **GUI Automation**: Cross-platform GUI automation with fallback mechanisms
-- **Platform Detector**: Comprehensive system detection and configuration
-
-### 4. External Integration Layer
-- **Vision API Client**: Multi-provider AI model communication
-- **Model Runner**: Unified interface for AI model interactions
-- **API Manager**: Centralized API management with monitoring
-
-### 5. Enhanced Context Management
-- **Conversation History**: Temporal context tracking and management
-- **Screenshot Labeling**: Visual context enhancement with labels
+- **Vision-based automation**: Uses computer vision to understand GUI elements
+- **Two-phase architecture**: Task list generation + sequential execution
+- **Cross-platform support**: Works on macOS, Windows, and Linux
+- **Multiple AI models**: Supports various AI models including Gemini 3 Flash
+- **Screenshot capture**: Takes and analyzes screenshots for visual understanding
+- **GUI automation**: Performs clicks, typing, scrolling, and other interactions
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
 - Python 3.8 or higher
-- Cross-platform GUI automation capabilities
-- AI model API keys (OpenAI, Anthropic, etc.) or local Ollama setup
+- [Ollama](https://ollama.ai/) account and installation
+- Ollama running locally on your machine
+- Gemini 3 Flash model pulled in Ollama
+
+### Platform Support
+
+**Note**: This project has been primarily tested on macOS. While it is designed to work on Windows and Linux as well, cross-platform compatibility may vary. The codebase includes platform-specific dependencies for all three major operating systems, but testing has been focused on macOS environments.
 
 ### Installation
 
-#### Automatic Installation (Recommended)
-```bash
-# Clone the repository
-git clone <repository-url>
-cd ai-agent
+#### Step 1: Set up Ollama
 
-# Run the installation script
-./scripts/install/detect_os_and_install.sh
+1. **Create an Ollama account**:
+   - Visit [https://ollama.ai/](https://ollama.ai/)
+   - Sign up for a free account
+
+2. **Install Ollama**:
+   - Download and install Ollama for your operating system from [https://ollama.ai/download](https://ollama.ai/download)
+   - Follow the installation instructions for your platform
+
+3. **Start Ollama service**:
+   - Open your terminal/command prompt
+   - Run: `ollama serve`
+   - Verify it's running at `http://localhost:11434`
+
+4. **Pull the required model**:
+   ```bash
+   ollama pull gemini-3-flash-preview:latest
+   ```
+
+#### Step 2: Clone and Install VEXIS-1
+
+1. Clone this repository:
+```bash
+git clone https://github.com/YOUR_USERNAME/VEXIS-1.git
+cd VEXIS-1
 ```
 
-#### Manual Installation
+2. Install dependencies:
 ```bash
-# Create virtual environment
-python3 -m venv .venv
-source .venv/bin/activate
-
-# Install dependencies
 pip install -r requirements.txt
-
-# Install the package
 pip install -e .
 ```
 
-### Basic Usage
+**Note**: The program will automatically check for missing dependencies and prompt you to install them if needed.
+
+### Usage
+
+Run VEXIS-1 with a simple command:
 
 ```bash
-# Simple instruction
-ai-agent "Open a web browser and search for AI"
-
-# Enhanced mode with conversation history
-ai-agent-enhanced "Automate login process" --session-file session.json
-
-# With custom configuration
-ai-agent --config config.yaml "Click the button at coordinates (0.5, 0.3)"
+python3 run.py "your instruction here"
 ```
 
-## 🐳 Docker Support
-
-### Quick Start with Docker Compose
+**Examples:**
 ```bash
-# Start production containers
-docker-compose --profile production up -d
-
-# Start minimal container
-docker-compose --profile minimal up -d
-
-# Start development environment
-docker-compose --profile development up -d
+python3 run.py "Take a screenshot"
+python3 run.py "Open the calculator and perform 2+2"
+python3 run.py "Open a web browser and navigate to google.com"
 ```
 
-### Available Containers
-- `ai-agent-ubuntu`: Full-featured Ubuntu-based container
-- `ai-agent-centos`: Enterprise-ready CentOS container
-- `ai-agent-alpine`: Minimal footprint Alpine container
-- `ai-agent-macos`: macOS compatibility layer
-- `ai-agent-windows`: Windows compatibility layer
+For debug mode:
+```bash
+python3 run.py "your instruction" --debug
+```
 
-## 📋 Features
+## 🧠 AI Models Used
 
-### Core Capabilities
-- **Vision-based Analysis**: Screenshot capture and AI-powered understanding
-- **Cross-Platform Support**: macOS, Windows, Linux with automatic fallbacks
-- **Intelligent Task Generation**: AI-powered breakdown of complex instructions
-- **Robust Command Execution**: Multiple fallback methods with retry logic
-- **Conversation History**: Context-aware execution with temporal understanding
-- **Adaptive Strategies**: Machine learning-based strategy optimization
+This project primarily uses:
+- **Gemini 3 Flash** (via Ollama) - Main model for vision-based tasks
+- **Local inference** through Ollama at `http://localhost:11434`
 
-### Advanced Features
-- **Screenshot Labeling**: Visual context enhancement with labels and annotations
-- **Session Persistence**: Save and restore execution sessions
-- **Multi-Model Support**: OpenAI, Anthropic, Google, local models
-- **Performance Monitoring**: Comprehensive metrics and health checks
-- **Security Hardening**: Input validation and error handling
-- **Extensible Architecture**: Plugin system for custom components
+## 📋 Dependencies
 
-## 🔧 Configuration
+### Core Dependencies
+- `Pillow>=10.0.0` - Image processing
+- `pyautogui>=0.9.54` - GUI automation
+- `opencv-python>=4.8.0` - Computer vision
+- `numpy>=1.24.0` - Numerical computations
+- `pynput>=1.7.6` - Input device control
 
-### Basic Configuration
+### AI/ML Dependencies
+- `openai>=1.0.0` - OpenAI API support
+- `anthropic>=0.7.0` - Anthropic API support
+- `transformers>=4.35.0` - Hugging Face transformers
+- `torch>=2.1.0` - PyTorch
+
+### Platform-specific Dependencies
+- `pyobjc-framework-Cocoa>=9.0` (macOS)
+- `pywin32>=306` (Windows)
+- `python-xlib>=0.33` (Linux)
+
+## ⚙️ Configuration
+
+The agent can be configured via `config.yaml`:
+
 ```yaml
-# config.yaml
-logging:
-  level: INFO
-  console: true
-  file: logs/ai_agent.log
-
 api:
-  timeout: 30
+  preferred_provider: "ollama"
+  local_endpoint: "http://localhost:11434"
+  local_model: "gemini-3-flash-preview:latest"
+  timeout: 120
   max_retries: 3
-  model: gpt-4-vision-preview
-
-gui:
-  click_delay: 0.1
-  typing_delay: 0.05
-  screenshot_quality: 95
-
-security:
-  max_coordinate_value: 1.0
-  sanitize_text_input: true
 ```
 
-### Environment Variables
-```bash
-export AI_AGENT_LOG_LEVEL=DEBUG
-export AI_AGENT_CONFIG_PATH=/path/to/config.yaml
-export OPENAI_API_KEY=your_api_key
-export ANTHROPIC_API_KEY=your_api_key
-```
+## 🏗️ Architecture
 
-## 🧪 Testing
+The project uses a two-phase architecture:
 
-### Run Tests
+1. **Task Generation Phase**: Analyzes the instruction and generates a task list
+2. **Execution Phase**: Sequentially executes each task with visual feedback
+
+### Key Components
+
+- `TwoPhaseEngine` - Core execution engine
+- `ScreenshotCapture` - Handles screenshot capture and processing
+- `GUIAutomation` - Manages GUI interactions
+- `ModelRunner` - Interfaces with AI models
+
+## ⚠️ **IMPORTANT DISCLAIMER**
+
+**WARNING**: VEXIS-1 has the capability to perform automated actions on your computer, including but not limited to:
+
+- Deleting files and folders
+- Installing or uninstalling software
+- Making online purchases
+- Sending emails or messages
+- Modifying system settings
+- Executing arbitrary commands
+
+**The developers of this project are NOT responsible for any damage, data loss, financial loss, or any other consequences that may result from using VEXIS-1.**
+
+**Use at your own risk**. Always:
+- Monitor the agent's actions closely
+- Test in a safe environment first
+- Keep backups of important data
+- Never run unattended with critical systems
+
+## 🧪 Development
+
+### Running Tests
 ```bash
-# Run all tests
 pytest
-
-# Run specific test categories
-pytest tests/unit/
-pytest tests/integration/
-pytest tests/cross_platform/
-
-# Run with coverage
-pytest --cov=ai_agent --cov-report=html
 ```
 
-### Test Categories
-- **Unit Tests**: Component-level testing with mocking
-- **Integration Tests**: End-to-end workflow testing
-- **Cross-Platform Tests**: Platform compatibility validation
-- **Performance Tests**: Resource usage and timing validation
-
-## 📊 Monitoring
-
-### Health Checks
+### Code Formatting
 ```bash
-# Check system health
-ai-agent-validate
-
-# Check API status
-python -m ai_agent.external_integration.api_manager --check-health
-
-# Check platform compatibility
-python -m ai_agent.platform_abstraction.platform_detector --test
+black src/
 ```
 
-### Performance Metrics
+### Type Checking
 ```bash
-# Get execution statistics
-python -m ai_agent.core_processing.execution_engine --stats
-
-# Get API performance
-python -m ai_agent.external_integration.api_manager --performance
-
-# Get strategy performance
-python -m ai_agent.core_processing.adaptive_strategy_manager --stats
-```
-
-## 🔒 Security
-
-### Security Features
-- **Input Validation**: Comprehensive validation of all inputs
-- **Command Sanitization**: Prevents dangerous command execution
-- **Path Traversal Prevention**: Blocks directory traversal attacks
-- **API Key Protection**: Secure credential management
-- **Screenshot Privacy**: Optional screenshot redaction
-
-### Security Best Practices
-```bash
-# Run in secure mode
-ai-agent --validate-only
-
-# Use configuration file with restricted permissions
-chmod 600 config.yaml
-
-# Enable security logging
-AI_AGENT_LOG_LEVEL=DEBUG ai-agent "instruction"
-```
-
-## 📚 Documentation
-
-### Architecture Documentation
-- `docs/`: Additional documentation and guides
-
-### API Documentation
-```bash
-# Generate API documentation
-python -m ai_agent.main --help
-
-# Enhanced app documentation
-python -m ai_agent.enhanced --help
-```
-
-## 🤝 Contributing
-
-### Development Setup
-```bash
-# Clone repository
-git clone <repository-url>
-cd ai-agent
-
-# Setup development environment
-./scripts/install/detect_os_and_install.sh
-source .venv/bin/activate
-
-# Install development dependencies
-pip install -e ".[dev]"
-
-# Run pre-commit hooks
-pre-commit install
-```
-
-### Code Quality
-```bash
-# Format code
-black src/ tests/
-
-# Lint code
-flake8 src/ tests/
-
-# Type checking
 mypy src/
-
-# Run all checks
-pre-commit run --all-files
 ```
-
-### Submitting Changes
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Ensure all tests pass
-6. Submit a pull request
-
-## 🚨 Deployment
-
-### Production Deployment
-```bash
-# Using Docker Compose
-docker-compose --profile production up -d
-
-# Using Docker
-docker run -d \
-  --name ai-agent-prod \
-  -v /opt/ai-agent/logs:/app/logs \
-  -v /opt/ai-agent/config.yaml:/app/config.yaml:ro \
-  ai-agent:ubuntu
-```
-
-### Kubernetes Deployment
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: ai-agent
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: ai-agent
-  template:
-    spec:
-      containers:
-      - name: ai-agent
-        image: ai-agent:ubuntu
-        ports:
-        - containerPort: 8080
-        env:
-        - name: USE_XVFB
-          value: "true"
-```
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-#### Installation Problems
-```bash
-# Check Python version
-python3 --version
-
-# Verify virtual environment
-ls -la .venv/
-
-# Check dependencies
-pip list
-```
-
-#### Runtime Issues
-```bash
-# Check logs
-tail -f logs/ai_agent.log
-
-# Run diagnostics
-ai-agent-validate
-
-# Test components
-python -c "import ai_agent; print('OK')"
-```
-
-#### Platform-Specific Issues
-```bash
-# Check platform detection
-python -m ai_agent.platform_abstraction.platform_detector
-
-# Test screenshot capture
-python -m ai_agent.platform_abstraction.screenshot_capture --test
-
-# Test GUI automation
-python -m ai_agent.platform_abstraction.gui_automation --test
-```
-
-## 📄 Version History
-
-### v1.0.0 (Current)
-- Complete implementation of AI agent architecture
-- Cross-platform support (macOS, Windows, Linux)
-- Multi-model AI integration
-- Enhanced context management
-- Comprehensive testing suite
-- Docker containerization
-- Production-ready security features
 
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## 🤝 Contributing
 
-- Built with comprehensive testing and validation
-- Inspired by modern AI agent architectures
-- Powered by cutting-edge computer vision and NLP technologies
-- Community-driven development with extensive validation
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
 
-## 📞 Support
+## 🐛 Troubleshooting
 
-For support, please:
-1. Check the documentation
-2. Search existing issues
-3. Create a new issue with detailed information
-4. Join our community discussions
+### Common Issues
+
+1. **Ollama connection failed**: Make sure Ollama is running at `http://localhost:11434`
+2. **Model not found**: Ensure you've pulled the Gemini 3 Flash model using `ollama pull gemini-3-flash-preview:latest`
+3. **Permission denied**: On macOS, you may need to grant accessibility permissions for screen recording and keyboard control
+4. **Import errors**: Make sure all dependencies are installed correctly
+
+### Getting Help
+
+- Check the [Issues](https://github.com/YOUR_USERNAME/VEXIS-1/issues) page
+- Review the logs for detailed error messages
+- Ensure your environment meets all prerequisites
+
+## 📚 Documentation
+
+For more detailed documentation, please visit the `docs/` directory or check the inline documentation in the source code.
 
 ---
 
-**Built with ❤️ for flawless automation**
+**Remember**: VEXIS-1 is a powerful automation tool. Use responsibly and always verify actions before running them in production environments.

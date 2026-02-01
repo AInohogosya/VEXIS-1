@@ -32,6 +32,7 @@ class APIConfig:
     
     # Gemini configuration (disabled)
     gemini_model: str = "gemini-3-flash"
+    # API key should be set via environment variable AI_AGENT_GEMINI_API_KEY
     gemini_api_key: Optional[str] = None
     
     # General settings
@@ -259,7 +260,7 @@ class ConfigManager:
                 "local_endpoint": self._config.api.local_endpoint,
                 "local_model": self._config.api.local_model,
                 "gemini_model": self._config.api.gemini_model,
-                "gemini_api_key": self._config.api.gemini_api_key,
+                # API key intentionally excluded to prevent saving sensitive data
                 "preferred_provider": self._config.api.preferred_provider,
                 "timeout": self._config.api.timeout,
                 "max_retries": self._config.api.max_retries,

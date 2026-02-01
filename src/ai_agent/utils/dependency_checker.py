@@ -1,0 +1,391 @@
+#!/usr/bin/env python3
+"""
+Dependency Checker and Auto-Installer
+Ensures all required dependencies are available before running the AI Agent
+"""
+
+import sys
+import subprocess
+import platform
+import importlib
+import os
+from typing import Dict, List, Tuple, Optional
+from pathlib import Path
+
+
+class DependencyChecker:
+    """Comprehensive dependency checking and auto-installation system"""
+    
+    def __init__(self, project_root: Path):
+        self.project_root = project_root
+        self.requirements_file = project_root / "requirements.txt"
+        self.pyproject_file = project_root / "pyproject.toml"
+        
+        # Core dependencies that must be available
+        self.core_dependencies = {
+            "PIL": "Pillow>=10.0.0",
+            "pyautogui": "pyautogui>=0.9.54", 
+            "requests": "requests>=2.31.0",
+            "cv2": "opencv-python>=4.8.0",
+            "numpy": "numpy>=1.24.0",
+            "pynput": "pynput>=1.7.6",
+            "openai": "openai>=1.0.0",
+            "anthropic": "anthropic>=0.7.0",
+            "transformers": "transformers>=4.35.0",
+            "torch": "torch>=2.1.0",
+            "cryptography": "cryptography>=41.0.0",
+            "pydantic": "pydantic>=2.0.0",
+            "structlog": "structlog>=23.0.0",
+            "rich": "rich>=13.0.0",
+            "yaml": "PyYAML",  # yaml module imports as PyYAML package
+        }
+        
+        # Platform-specific dependencies
+        self.platform_dependencies = {
+            "darwin": {
+                "objc": "pyobjc-framework-Cocoa>=9.0"
+            },
+            "win32": {
+                "win32api": "pywin32>=306"
+            },
+            "linux": {
+                "Xlib": "python-xlib>=0.33"
+            }
+        }
+        
+        # System packages that might need installation
+        self.system_packages = {
+            "darwin": [
+                "xcode-select",  # For Xcode command line tools
+            ],
+            "win32": [
+                # Windows usually has these pre-installed
+            ],
+            "linux": {
+                "debian": [
+                    "python3-dev", "python3-pip", "python3-venv",
+                    "scrot", "python3-tk", "xvfb", "x11-utils"
+                ],
+                "redhat": [
+                    "python3-devel", "python3-pip", "scrot", 
+                    "tkinter", "xorg-x11-server-Xvfb"
+                ]
+            }
+        }
+
+    def check_python_version(self) -> Tuple[bool, str]:
+        """Check if Python version meets requirements"""
+        required_version = (3, 8)
+        current_version = sys.version_info[:2]
+        
+        if current_version >= required_version:
+            return True, f"Python {current_version[0]}.{current_version[1]} ✓"
+        else:
+            return False, f"Python {current_version[0]}.{current_version[1]} (required >=3.8) ✗"
+
+    def check_import(self, module_name: str) -> bool:
+        """Check if a module can be imported"""
+        try:
+            importlib.import_module(module_name)
+            return True
+        except ImportError:
+            return False
+
+    def get_package_version(self, module_name: str) -> Optional[str]:
+        """Get version of an installed package"""
+        try:
+            module = importlib.import_module(module_name)
+            if hasattr(module, '__version__'):
+                return module.__version__
+            elif hasattr(module, 'version'):
+                return module.version
+            else:
+                return "unknown"
+        except ImportError:
+            return None
+
+    def check_core_dependencies(self) -> Dict[str, Tuple[bool, str]]:
+        """Check all core dependencies"""
+        results = {}
+        
+        print("🔍 Checking core Python dependencies...")
+        
+        for module, package in self.core_dependencies.items():
+            if self.check_import(module):
+                version = self.get_package_version(module)
+                results[module] = (True, f"{package} ({version}) ✓")
+            else:
+                results[module] = (False, f"{package} ✗")
+        
+        return results
+
+    def check_platform_dependencies(self) -> Dict[str, Tuple[bool, str]]:
+        """Check platform-specific dependencies"""
+        results = {}
+        current_platform = sys.platform
+        
+        print(f"🔍 Checking {current_platform} platform dependencies...")
+        
+        if current_platform in self.platform_dependencies:
+            for module, package in self.platform_dependencies[current_platform].items():
+                if self.check_import(module):
+                    version = self.get_package_version(module)
+                    results[module] = (True, f"{package} ({version}) ✓")
+                else:
+                    results[module] = (False, f"{package} ✗")
+        
+        return results
+
+    def install_package(self, package: str) -> Tuple[bool, str]:
+        """Install a package using pip"""
+        try:
+            print(f"📦 Installing {package}...")
+            result = subprocess.run(
+                [sys.executable, "-m", "pip", "install", package],
+                capture_output=True,
+                text=True,
+                timeout=300  # 5 minute timeout
+            )
+            
+            if result.returncode == 0:
+                return True, f"Successfully installed {package}"
+            else:
+                return False, f"Failed to install {package}: {result.stderr}"
+                
+        except subprocess.TimeoutExpired:
+            return False, f"Installation of {package} timed out"
+        except Exception as e:
+            return False, f"Error installing {package}: {str(e)}"
+
+    def install_requirements_file(self) -> Tuple[bool, str]:
+        """Install all dependencies from requirements.txt"""
+        if not self.requirements_file.exists():
+            return False, "requirements.txt not found"
+        
+        try:
+            print("📦 Installing dependencies from requirements.txt...")
+            result = subprocess.run(
+                [sys.executable, "-m", "pip", "install", "-r", str(self.requirements_file)],
+                capture_output=True,
+                text=True,
+                timeout=600  # 10 minute timeout
+            )
+            
+            if result.returncode == 0:
+                return True, "Successfully installed requirements.txt"
+            else:
+                return False, f"Failed to install requirements.txt: {result.stderr}"
+                
+        except subprocess.TimeoutExpired:
+            return False, "Installation of requirements.txt timed out"
+        except Exception as e:
+            return False, f"Error installing requirements.txt: {str(e)}"
+
+    def install_project(self) -> Tuple[bool, str]:
+        """Install the project in editable mode"""
+        if not self.pyproject_file.exists():
+            return False, "pyproject.toml not found"
+        
+        try:
+            print("📦 Installing project in editable mode...")
+            result = subprocess.run(
+                [sys.executable, "-m", "pip", "install", "-e", str(self.project_root)],
+                capture_output=True,
+                text=True,
+                timeout=300  # 5 minute timeout
+            )
+            
+            if result.returncode == 0:
+                return True, "Successfully installed project"
+            else:
+                return False, f"Failed to install project: {result.stderr}"
+                
+        except subprocess.TimeoutExpired:
+            return False, "Project installation timed out"
+        except Exception as e:
+            return False, f"Error installing project: {str(e)}"
+
+    def check_system_dependencies(self) -> Dict[str, Tuple[bool, str]]:
+        """Check system-level dependencies"""
+        results = {}
+        current_platform = sys.platform
+        
+        print(f"🔍 Checking system dependencies for {current_platform}...")
+        
+        if current_platform == "linux":
+            # Try to detect distribution
+            try:
+                with open("/etc/os-release", "r") as f:
+                    os_release = f.read()
+                    if "debian" in os_release.lower() or "ubuntu" in os_release.lower():
+                        distro = "debian"
+                    elif "rhel" in os_release.lower() or "centos" in os_release.lower() or "fedora" in os_release.lower():
+                        distro = "redhat"
+                    else:
+                        distro = "unknown"
+            except:
+                distro = "unknown"
+            
+            if distro in self.system_packages["linux"]:
+                for package in self.system_packages["linux"][distro]:
+                    # Check if package is available
+                    try:
+                        result = subprocess.run(["which", package], capture_output=True)
+                        if result.returncode == 0:
+                            results[package] = (True, f"{package} ✓")
+                        else:
+                            results[package] = (False, f"{package} ✗")
+                    except:
+                        results[package] = (False, f"{package} ✗")
+        
+        elif current_platform == "darwin":
+            for package in self.system_packages["darwin"]:
+                try:
+                    result = subprocess.run(["which", package], capture_output=True)
+                    if result.returncode == 0:
+                        results[package] = (True, f"{package} ✓")
+                    else:
+                        results[package] = (False, f"{package} ✗")
+                except:
+                    results[package] = (False, f"{package} ✗")
+        
+        return results
+
+    def auto_install_missing(self, missing_deps: List[str]) -> bool:
+        """Attempt to auto-install missing dependencies"""
+        if not missing_deps:
+            return True
+        
+        print(f"\n🔧 Found {len(missing_deps)} missing dependencies. Attempting auto-install...")
+        
+        # First try to install from requirements.txt if it exists
+        if self.requirements_file.exists():
+            success, message = self.install_requirements_file()
+            if success:
+                print(f"✅ {message}")
+                return True
+            else:
+                print(f"⚠️  {message}")
+        
+        # Fall back to individual package installation
+        for dep in missing_deps:
+            if dep in self.core_dependencies:
+                package = self.core_dependencies[dep]
+            elif sys.platform in self.platform_dependencies:
+                platform_deps = self.platform_dependencies[sys.platform]
+                if dep in platform_deps:
+                    package = platform_deps[dep]
+                else:
+                    package = dep
+            else:
+                package = dep
+            
+            success, message = self.install_package(package)
+            if success:
+                print(f"✅ {message}")
+            else:
+                print(f"❌ {message}")
+                return False
+        
+        # Install project in editable mode
+        success, message = self.install_project()
+        if success:
+            print(f"✅ {message}")
+        else:
+            print(f"⚠️  {message}")
+        
+        return True
+
+    def run_full_check(self, auto_install: bool = True) -> bool:
+        """Run comprehensive dependency check"""
+        print("🚀 Starting dependency check for VEXIS-1 AI Agent\n")
+        
+        # Check Python version
+        py_ok, py_msg = self.check_python_version()
+        print(f"🐍 {py_msg}")
+        if not py_ok:
+            print("❌ Python version too old. Please upgrade to Python 3.8 or higher.")
+            return False
+        
+        # Check core dependencies
+        core_results = self.check_core_dependencies()
+        missing_core = [mod for mod, (ok, _) in core_results.items() if not ok]
+        
+        # Check platform dependencies  
+        platform_results = self.check_platform_dependencies()
+        missing_platform = [mod for mod, (ok, _) in platform_results.items() if not ok]
+        
+        # Check system dependencies
+        system_results = self.check_system_dependencies()
+        missing_system = [pkg for pkg, (ok, _) in system_results.items() if not ok]
+        
+        # Display results
+        all_missing = missing_core + missing_platform
+        
+        if not all_missing and not missing_system:
+            print("\n✅ All dependencies are satisfied!")
+            return True
+        
+        print(f"\n📊 Dependency Summary:")
+        print(f"   Core dependencies missing: {len(missing_core)}")
+        print(f"   Platform dependencies missing: {len(missing_platform)}")  
+        print(f"   System dependencies missing: {len(missing_system)}")
+        
+        # Show missing dependencies
+        if missing_core:
+            print(f"\n❌ Missing core dependencies:")
+            for mod in missing_core:
+                print(f"   - {core_results[mod][1]}")
+        
+        if missing_platform:
+            print(f"\n❌ Missing platform dependencies:")
+            for mod in missing_platform:
+                print(f"   - {platform_results[mod][1]}")
+        
+        if missing_system:
+            print(f"\n⚠️  Missing system dependencies:")
+            for pkg in missing_system:
+                print(f"   - {system_results[pkg][1]}")
+            print("   Note: System dependencies may require manual installation")
+        
+        # Auto-install if requested
+        if auto_install and all_missing:
+            print(f"\n🔧 Attempting to auto-install missing Python dependencies...")
+            success = self.auto_install_missing(all_missing)
+            
+            if success:
+                print(f"\n🔄 Re-checking dependencies after installation...")
+                # Re-check only the ones we tried to install
+                for dep in all_missing:
+                    if self.check_import(dep):
+                        version = self.get_package_version(dep)
+                        print(f"✅ {dep} ({version})")
+                    else:
+                        print(f"❌ {dep} still missing")
+                
+                # Final verification
+                final_missing = [mod for mod in all_missing if not self.check_import(mod)]
+                if not final_missing:
+                    print(f"\n🎉 All dependencies successfully installed!")
+                    return True
+                else:
+                    print(f"\n⚠️  Some dependencies could not be installed automatically")
+                    return False
+            else:
+                print(f"\n❌ Auto-installation failed")
+                return False
+        
+        return not all_missing
+
+
+def check_dependencies(project_root: Path, auto_install: bool = True) -> bool:
+    """Convenience function to check dependencies"""
+    checker = DependencyChecker(project_root)
+    return checker.run_full_check(auto_install=auto_install)
+
+
+if __name__ == "__main__":
+    # Allow running as standalone script
+    project_root = Path(__file__).parent.parent
+    success = check_dependencies(project_root)
+    sys.exit(0 if success else 1)

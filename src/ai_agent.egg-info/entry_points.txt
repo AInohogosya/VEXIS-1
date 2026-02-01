@@ -1,4 +1,0 @@
-[console_scripts]
-ai-agent = ai_agent.user_interface.main_app:main
-ai-agent-enhanced = ai_agent.user_interface.enhanced_app:main
-ai-agent-validate = ai_agent.user_interface.shell_wrapper:main

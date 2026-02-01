@@ -1,7 +1,9 @@
 # VEXIS-1 Configuration
+# Set AI_AGENT_LOCAL_ENDPOINT environment variable to override local_endpoint
 
 api:
   preferred_provider: "ollama"
+  # Use environment variable AI_AGENT_LOCAL_ENDPOINT to override this
   local_endpoint: "http://localhost:11434"
   local_model: "gemini-3-flash-preview:latest"
   timeout: 120

@@ -1,7 +1,0 @@
-ai_agent
-core_processing
-external_integration
-platform_abstraction
-security
-user_interface
-utils

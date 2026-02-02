@@ -5,6 +5,6 @@ api:
   preferred_provider: "ollama"
   # Use environment variable AI_AGENT_LOCAL_ENDPOINT to override this
   local_endpoint: "http://localhost:11434"
-  local_model: "gemini-3-flash-preview:cloud"
+  local_model: "gemini-3-flash-preview:latest"
   timeout: 120
   max_retries: 3

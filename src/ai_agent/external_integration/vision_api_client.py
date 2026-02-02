@@ -276,7 +276,7 @@ class OllamaProvider:
     
     @property
     def default_model(self) -> str:
-        return self.config.get("local_model", "gemini-3-flash-preview:cloud")
+        return self.config.get("local_model", "gemini-3-flash-preview:latest")
     
     def analyze_image(self, request: APIRequest) -> APIResponse:
         """Analyze image using Ollama API (supports both local and cloud models)"""

@@ -91,7 +91,7 @@ Configure via `config.yaml`:
 api:
   preferred_provider: "ollama"
   local_endpoint: "http://localhost:11434"
-  local_model: "gemini-3-flash-preview:cloud"
+  local_model: "gemini-3-flash-preview:latest"
   timeout: 120
   max_retries: 3
 ```
@@ -133,7 +133,7 @@ api:
 **Common Issues:**
 1. **Ollama connection**: Make sure Ollama runs at `http://localhost:11434`
 2. **Cloud access denied**: Run `ollama signin` with valid account
-3. **Model not found**: Check if `gemini-3-flash-preview:cloud` is available in your region
+3. **Model not found**: Check if `gemini-3-flash-preview:latest` is available in your region
 4. **Permission denied**: Grant accessibility permissions on macOS
 5. **Import errors**: Install missing dependencies
 

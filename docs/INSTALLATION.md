@@ -144,9 +144,8 @@ cp config/config.example.yaml config/config.yaml
 api:
   preferred_provider: "ollama"  # or "openai", "anthropic"
   local_endpoint: "http://localhost:11434"
-  local_model: "gemini-3-flash-preview:cloud"
-
-logging:
+  local_model: "gemini-3-flash-preview:latest"
+  logging:
   level: "INFO"
   console: true
   file: "logs/ai_agent.log"

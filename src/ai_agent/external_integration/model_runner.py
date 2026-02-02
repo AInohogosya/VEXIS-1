@@ -182,7 +182,7 @@ class ModelRunner:
                 image_format=request.image_format,
                 max_tokens=request.max_tokens,
                 temperature=request.temperature,
-                model=self.config.get("local_model", "gemini-3-flash-preview:cloud"),
+                model=self.config.get("local_model", "gemini-3-flash-preview:latest"),
                 provider=APIProvider.OLLAMA,
             )
             

@@ -28,7 +28,7 @@ class APIConfig:
     """API configuration"""
     # Local Ollama configuration
     local_endpoint: str = "http://localhost:11434"
-    local_model: str = "gemini-3-flash-preview:cloud"
+    local_model: str = "gemini-3-flash-preview:latest"
     
     
     # General settings

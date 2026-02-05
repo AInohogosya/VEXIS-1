@@ -119,6 +119,40 @@ class MinimalDependencyChecker:
         else:
             return False, "Not in virtual environment (system Python) ⚠️"
     
+    def get_venv_python_executable(self) -> Optional[str]:
+        """Get the Python executable path for the virtual environment"""
+        # Check if we're currently in a virtual environment
+        venv_ok, venv_msg = self.check_virtual_env()
+        if venv_ok:
+            return sys.executable
+        
+        # Check if there's a venv directory in the project root
+        venv_path = self.project_root / "venv"
+        if venv_path.exists() and venv_path.is_dir():
+            # Try different possible Python executable paths
+            if sys.platform == "win32":
+                python_exe = venv_path / "Scripts" / "python.exe"
+                pythonw_exe = venv_path / "Scripts" / "pythonw.exe"
+                if python_exe.exists():
+                    return str(python_exe)
+                elif pythonw_exe.exists():
+                    return str(pythonw_exe)
+            else:
+                python_exe = venv_path / "bin" / "python"
+                if python_exe.exists():
+                    return str(python_exe)
+        
+        return None
+    
+    def get_venv_pip_executable(self) -> Optional[str]:
+        """Get the pip executable path for the virtual environment"""
+        venv_python = self.get_venv_python_executable()
+        if venv_python:
+            # Use python -m pip instead of direct pip path for better reliability
+            return [venv_python, "-m", "pip"]
+        
+        return None
+    
     def delete_all_virtual_environments(self) -> Tuple[bool, str]:
         """Delete all existing virtual environments in the project"""
         deleted_count = 0
@@ -219,6 +253,15 @@ class MinimalDependencyChecker:
             return True
         except ImportError:
             return False
+        except PermissionError:
+            # Handle permission errors (e.g., when rich tries to access cwd)
+            return False
+        except OSError:
+            # Handle other OS-level errors during import
+            return False
+        except Exception:
+            # Handle any other unexpected import errors
+            return False
 
     def get_package_version(self, module_name: str) -> Optional[str]:
         """Get version of an installed package"""
@@ -268,8 +311,25 @@ class MinimalDependencyChecker:
         
         return results
 
-    def install_package(self, package: str, retries: int = 3) -> Tuple[bool, str]:
+    def install_package(self, package: str, retries: int = 3, use_venv: bool = True) -> Tuple[bool, str]:
         """Install a package using pip with retry mechanism"""
+        # Determine which Python/pip to use
+        pip_cmd = None
+        python_exe = None
+        
+        if use_venv:
+            venv_pip = self.get_venv_pip_executable()
+            if venv_pip:
+                pip_cmd = venv_pip
+                python_exe = self.get_venv_python_executable()
+                print(f"Using virtual environment: {python_exe}")
+            else:
+                print("No virtual environment found, using system Python")
+        
+        if not pip_cmd:
+            # Fall back to system Python
+            pip_cmd = [sys.executable, "-m", "pip"]
+        
         for attempt in range(retries):
             try:
                 if attempt > 0:
@@ -278,7 +338,7 @@ class MinimalDependencyChecker:
                     print(f"Installing {package}...")
                 
                 result = subprocess.run(
-                    [sys.executable, "-m", "pip", "install", package],
+                    pip_cmd + ["install", package],
                     capture_output=True,
                     text=True,
                     timeout=300
@@ -289,7 +349,10 @@ class MinimalDependencyChecker:
                 else:
                     error_msg = result.stderr.strip()
                     if "Permission denied" in error_msg:
-                        return False, f"Permission denied installing {package}. Try using --user flag or virtual environment."
+                        if use_venv and python_exe:
+                            return False, f"Permission denied installing {package}. Virtual environment may have permission issues."
+                        else:
+                            return False, f"Permission denied installing {package}. Try using --user flag or virtual environment."
                     elif "Could not find a version" in error_msg:
                         return False, f"Package {package} not found or version incompatible."
                     elif "Network is unreachable" in error_msg or "Connection failed" in error_msg:
@@ -313,10 +376,27 @@ class MinimalDependencyChecker:
         
         return False, f"Failed to install {package} after {retries} attempts"
 
-    def install_requirements_file(self, retries: int = 2) -> Tuple[bool, str]:
+    def install_requirements_file(self, retries: int = 2, use_venv: bool = True) -> Tuple[bool, str]:
         """Install all dependencies from requirements.txt with retry"""
         if not self.requirements_file.exists():
             return False, "requirements.txt not found"
+        
+        # Determine which Python/pip to use
+        pip_cmd = None
+        python_exe = None
+        
+        if use_venv:
+            venv_pip = self.get_venv_pip_executable()
+            if venv_pip:
+                pip_cmd = venv_pip
+                python_exe = self.get_venv_python_executable()
+                print(f"Using virtual environment: {python_exe}")
+            else:
+                print("No virtual environment found, using system Python")
+        
+        if not pip_cmd:
+            # Fall back to system Python
+            pip_cmd = [sys.executable, "-m", "pip"]
         
         for attempt in range(retries):
             try:
@@ -326,7 +406,7 @@ class MinimalDependencyChecker:
                     print("Installing dependencies from requirements.txt...")
                 
                 result = subprocess.run(
-                    [sys.executable, "-m", "pip", "install", "-r", str(self.requirements_file)],
+                    pip_cmd + ["install", "-r", str(self.requirements_file)],
                     capture_output=True,
                     text=True,
                     timeout=600
@@ -355,10 +435,27 @@ class MinimalDependencyChecker:
         
         return False, f"Failed to install requirements.txt after {retries} attempts"
 
-    def install_project(self, retries: int = 2) -> Tuple[bool, str]:
+    def install_project(self, retries: int = 2, use_venv: bool = True) -> Tuple[bool, str]:
         """Install the project in editable mode with retry"""
         if not self.pyproject_file.exists():
             return False, "pyproject.toml not found"
+        
+        # Determine which Python/pip to use
+        pip_cmd = None
+        python_exe = None
+        
+        if use_venv:
+            venv_pip = self.get_venv_pip_executable()
+            if venv_pip:
+                pip_cmd = venv_pip
+                python_exe = self.get_venv_python_executable()
+                print(f"Using virtual environment: {python_exe}")
+            else:
+                print("No virtual environment found, using system Python")
+        
+        if not pip_cmd:
+            # Fall back to system Python
+            pip_cmd = [sys.executable, "-m", "pip"]
         
         for attempt in range(retries):
             try:
@@ -368,7 +465,7 @@ class MinimalDependencyChecker:
                     print("Installing project in editable mode...")
                 
                 result = subprocess.run(
-                    [sys.executable, "-m", "pip", "install", "-e", str(self.project_root)],
+                    pip_cmd + ["install", "-e", str(self.project_root)],
                     capture_output=True,
                     text=True,
                     timeout=300
@@ -429,6 +526,7 @@ class MinimalDependencyChecker:
         venv_ok, venv_msg = self.check_virtual_env()
         print(f"{venv_msg}")
         
+        use_venv = False
         if not venv_ok:
             print("Running in system Python may cause permission issues.")
             print("Consider using a virtual environment for better reliability.")
@@ -439,17 +537,20 @@ class MinimalDependencyChecker:
                 venv_success, venv_message = self.create_virtual_environment()
                 if venv_success:
                     print(f"{venv_message}")
-                    print("Virtual environment created. Continuing with installation...")
-                    # Continue with system Python for now, but note the venv exists
+                    print("Virtual environment created. Using it for installation...")
+                    use_venv = True
                 else:
                     print(f"{venv_message}")
                     print("Continuing with system Python...")
             else:
                 print("Installing with system Python (few dependencies missing)...")
+        else:
+            use_venv = True
+            print("Using existing virtual environment for installation...")
         
         # First try to install from requirements.txt if it exists
         if self.requirements_file.exists():
-            success, message = self.install_requirements_file()
+            success, message = self.install_requirements_file(use_venv=use_venv)
             if success:
                 print(f"{message}")
                 return True
@@ -471,7 +572,7 @@ class MinimalDependencyChecker:
             else:
                 package = dep
             
-            success, message = self.install_package(package)
+            success, message = self.install_package(package, use_venv=use_venv)
             if success:
                 print(f"{message}")
             else:
@@ -479,7 +580,7 @@ class MinimalDependencyChecker:
                 failed_packages.append(dep)
         
         # Install project in editable mode
-        success, message = self.install_project()
+        success, message = self.install_project(use_venv=use_venv)
         if success:
             print(f"{message}")
         else:

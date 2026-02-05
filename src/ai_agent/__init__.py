@@ -5,7 +5,7 @@ Production-ready implementation with zero-defect policy
 
 __version__ = "1.0.0"
 __author__ = "AI Agent Team"
-__email__ = "contact@ai-agent.local"
+__email__ = "contact@vexis-1.org"
 __description__ = "Vision-based AI agent for GUI automation"
 
 # Import core components for easy access

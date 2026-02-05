@@ -195,3 +195,24 @@ datasets/
 *.hdf5
 *.pkl
 *.pickle
+
+# Additional cleanup for GitHub publication
+.virtualenv/
+.virtualenvs/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.pytest_cache/
+.cache
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Temporary files from dependency installation
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+*.orig

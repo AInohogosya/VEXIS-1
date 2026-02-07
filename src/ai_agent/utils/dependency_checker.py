@@ -151,7 +151,7 @@ class DependencyChecker:
         # Check if there's a venv directory in the project root
         venv_path = self.project_root / "venv"
         if venv_path.exists() and venv_path.is_dir():
-            # Try different possible Python executable paths
+            # Try different possible Python executable paths based on platform
             if sys.platform == "win32":
                 python_exe = venv_path / "Scripts" / "python.exe"
                 pythonw_exe = venv_path / "Scripts" / "pythonw.exe"
@@ -160,9 +160,13 @@ class DependencyChecker:
                 elif pythonw_exe.exists():
                     return str(pythonw_exe)
             else:
+                # Linux/macOS/Unix-like systems
                 python_exe = venv_path / "bin" / "python"
+                python3_exe = venv_path / "bin" / "python3"
                 if python_exe.exists():
                     return str(python_exe)
+                elif python3_exe.exists():
+                    return str(python3_exe)
         
         return None
     
@@ -198,7 +202,13 @@ class DependencyChecker:
             
             if result.returncode == 0:
                 print(f"✅ Virtual environment created successfully")
-                print(f"💡 Activate it with: source {venv_path}/bin/activate")
+                # Provide platform-specific activation instructions
+                if sys.platform == "win32":
+                    activate_cmd = f"{venv_path}\\Scripts\\activate"
+                    print(f"💡 Activate it with: {activate_cmd}")
+                else:
+                    activate_cmd = f"source {venv_path}/bin/activate"
+                    print(f"💡 Activate it with: {activate_cmd}")
                 return True, f"Virtual environment created at {venv_path}"
             else:
                 return False, f"Failed to create virtual environment: {result.stderr}"

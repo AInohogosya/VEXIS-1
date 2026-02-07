@@ -89,18 +89,29 @@ def main():
                 print("Note: Virtual environment created. All dependencies will be installed there.")
                 # Exit and instruct user to run with the virtual environment
                 print("\nPlease run the script again to use the virtual environment:")
-                print(f"  {current_dir}/venv/bin/python3 run.py \"{' '.join(instruction_args)}\"")
-                print("Or activate the virtual environment first:")
-                print(f"  source {current_dir}/venv/bin/activate")
-                print("  python3 run.py \"{' '.join(instruction_args)}\"")
+                if sys.platform == "win32":
+                    print(f"  {current_dir}\\venv\\Scripts\\python.exe run.py \"{' '.join(instruction_args)}\"")
+                    print("Or activate the virtual environment first:")
+                    print(f"  {current_dir}\\venv\\Scripts\\activate")
+                    print("  python run.py \"{' '.join(instruction_args)}\"")
+                else:
+                    print(f"  {current_dir}/venv/bin/python3 run.py \"{' '.join(instruction_args)}\"")
+                    print("Or activate the virtual environment first:")
+                    print(f"  source {current_dir}/venv/bin/activate")
+                    print("  python3 run.py \"{' '.join(instruction_args)}\"")
                 sys.exit(0)
             else:
                 print(f"✗ Failed to create virtual environment: {venv_message}")
                 print("ERROR: Virtual environment is required for dependency isolation.")
                 print("Please create one manually:")
-                print(f"  python3 -m venv {current_dir}/venv")
-                print(f"  source {current_dir}/venv/bin/activate")
-                print("  python3 run.py \"your instruction here\"")
+                if sys.platform == "win32":
+                    print(f"  python -m venv {current_dir}\\venv")
+                    print(f"  {current_dir}\\venv\\Scripts\\activate")
+                    print("  python run.py \"your instruction here\"")
+                else:
+                    print(f"  python3 -m venv {current_dir}/venv")
+                    print(f"  source {current_dir}/venv/bin/activate")
+                    print("  python3 run.py \"your instruction here\"")
                 sys.exit(1)
         else:
             print(f"✓ {venv_msg}")

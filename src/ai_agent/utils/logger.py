@@ -248,54 +248,6 @@ class AIAgentLogger:
             **error_info
         )
     
-    def log_rebuild_start(
-        self,
-        original_instruction: str,
-        original_task_count: int,
-        execution_history_count: int,
-        failed_task: str,
-        **kwargs
-    ):
-        """Log REBUILD process start"""
-        self.info(
-            "REBUILD process started",
-            event_type="rebuild_start",
-            original_instruction=original_instruction,
-            original_task_count=original_task_count,
-            execution_history_count=execution_history_count,
-            failed_task=failed_task,
-            **kwargs
-        )
-    
-    def log_rebuild_success(
-        self,
-        new_task_count: int,
-        rebuild_duration: float,
-        **kwargs
-    ):
-        """Log successful REBUILD process"""
-        self.info(
-            "REBUILD process completed successfully",
-            event_type="rebuild_success",
-            new_task_count=new_task_count,
-            rebuild_duration=rebuild_duration,
-            **kwargs
-        )
-    
-    def log_rebuild_failure(
-        self,
-        error: str,
-        rebuild_duration: Optional[float] = None,
-        **kwargs
-    ):
-        """Log failed REBUILD process"""
-        self.error(
-            "REBUILD process failed",
-            event_type="rebuild_failure",
-            error=error,
-            rebuild_duration=rebuild_duration,
-            **kwargs
-        )
     
     def log_command_generation(
         self,

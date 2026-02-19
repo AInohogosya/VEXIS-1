@@ -67,10 +67,22 @@ class SecurityConfig:
 class PerformanceConfig:
     """Performance configuration"""
     max_concurrent_tasks: int = 1
-    task_timeout: int = 300  # 5 minutes
+    task_timeout: int = 0  # No task timeout
     screenshot_timeout: int = 10
     api_timeout: int = 30
     memory_limit_mb: int = 1024
+
+
+@dataclass
+class VerificationConfig:
+    """Task completion verification configuration"""
+    enabled: bool = True
+    confidence_threshold: float = 0.8
+    max_verification_attempts: int = 3
+    max_regenerations: int = 2
+    verification_model: str = "gemini-3-flash-preview:latest"
+    verification_timeout: int = 60
+    auto_regenerate: bool = True
 
 
 @dataclass
@@ -81,6 +93,7 @@ class Config:
     gui: GUIConfig = field(default_factory=GUIConfig)
     security: SecurityConfig = field(default_factory=SecurityConfig)
     performance: PerformanceConfig = field(default_factory=PerformanceConfig)
+    verification: VerificationConfig = field(default_factory=VerificationConfig)
     
     # Platform-specific settings
     platform: Dict[str, Any] = field(default_factory=dict)
@@ -131,6 +144,7 @@ class ConfigManager:
             "gui": {"click_delay": 0.1, "typing_delay": 0.05},
             "security": {"coordinate_validation": True},
             "performance": {"max_concurrent_tasks": 1},
+            "verification": {"enabled": True, "confidence_threshold": 0.8},
         }
         
         # Load from file if exists
@@ -184,6 +198,13 @@ class ConfigManager:
             "AI_AGENT_SCREENSHOT_QUALITY": ("gui", "screenshot_quality"),
             "AI_AGENT_MAX_CONCURRENT_TASKS": ("performance", "max_concurrent_tasks"),
             "AI_AGENT_TASK_TIMEOUT": ("performance", "task_timeout"),
+            "AI_AGENT_VERIFICATION_ENABLED": ("verification", "enabled"),
+            "AI_AGENT_VERIFICATION_CONFIDENCE_THRESHOLD": ("verification", "confidence_threshold"),
+            "AI_AGENT_VERIFICATION_MAX_ATTEMPTS": ("verification", "max_verification_attempts"),
+            "AI_AGENT_VERIFICATION_MAX_REGENERATIONS": ("verification", "max_regenerations"),
+            "AI_AGENT_VERIFICATION_MODEL": ("verification", "verification_model"),
+            "AI_AGENT_VERIFICATION_TIMEOUT": ("verification", "verification_timeout"),
+            "AI_AGENT_VERIFICATION_AUTO_REGENERATE": ("verification", "auto_regenerate"),
         }
         
         for env_var, (section, key) in env_mappings.items():
@@ -191,7 +212,8 @@ class ConfigManager:
             if value is not None:
                 # Type conversion
                 if key in ["timeout", "max_retries", "click_delay", "typing_delay", 
-                          "screenshot_quality", "max_concurrent_tasks", "task_timeout"]:
+                          "screenshot_quality", "max_concurrent_tasks", "task_timeout",
+                          "max_verification_attempts", "max_regenerations", "verification_timeout"]:
                     try:
                         if '.' in value:
                             value = float(value)
@@ -199,7 +221,7 @@ class ConfigManager:
                             value = int(value)
                     except ValueError:
                         continue
-                elif key in ["json_format", "console", "coordinate_validation"]:
+                elif key in ["json_format", "console", "coordinate_validation", "enabled", "auto_regenerate"]:
                     value = value.lower() in ['true', '1', 'yes', 'on']
                 
                 # Set in config
@@ -216,6 +238,7 @@ class ConfigManager:
                 gui=GUIConfig(**self._raw_config.get("gui", {})),
                 security=SecurityConfig(**self._raw_config.get("security", {})),
                 performance=PerformanceConfig(**self._raw_config.get("performance", {})),
+                verification=VerificationConfig(**self._raw_config.get("verification", {})),
                 platform=self._raw_config.get("platform", {}),
                 custom=self._raw_config.get("custom", {}),
             )

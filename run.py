@@ -8,7 +8,8 @@ This script automatically:
 2. Creates virtual environment if needed
 3. Installs all dependencies automatically
 4. Restarts itself in the virtual environment
-5. Runs the AI agent with the provided instruction
+5. Prompts for model selection (Ollama or Google API)
+6. Runs the AI agent with the provided instruction
 """
 
 import sys
@@ -347,8 +348,13 @@ def show_help():
     print("This script automatically handles:")
     print("  • Virtual environment creation and management")
     print("  • Dependency installation")
+    print("  • Model selection (Ollama or Google API)")
     print("  • Cross-platform compatibility")
     print("  • Self-bootstrapping")
+    print()
+    print("Model Options:")
+    print("  • Ollama: Local models via Ollama (requires ollama signin)")
+    print("  • Google API: Official Google Gemini API (requires API key)")
     print()
     print("Examples:")
     print("  python3 run.py \"Take a screenshot\"")
@@ -362,6 +368,158 @@ def show_help():
     print("  Automatically creates and uses './venv' directory")
     print("  All dependencies are isolated within the virtual environment")
     print("  No manual setup required - just run and go!")
+
+def check_ollama_login():
+    """Check if Ollama is logged in and prompt for sign-in if needed"""
+    try:
+        # Check if Ollama is available
+        result = subprocess.run(["ollama", "--version"], 
+                              capture_output=True, text=True, timeout=10)
+        if result.returncode != 0:
+            print("✗ Ollama is not installed or not in PATH")
+            print("Please install Ollama first: https://ollama.com/")
+            return False
+        
+        # Check if signed in
+        result = subprocess.run(["ollama", "whoami"], 
+                              capture_output=True, text=True, timeout=10)
+        if result.returncode != 0 or "not signed in" in result.stderr.lower():
+            print("Ollama is available but you are not signed in.")
+            print("Running 'ollama signin' to sign in...")
+            
+            # Prompt for sign-in
+            signin_result = subprocess.run(["ollama", "signin"], 
+                                          timeout=120)
+            if signin_result.returncode == 0:
+                print("✓ Ollama sign-in completed")
+                return True
+            else:
+                print("✗ Ollama sign-in failed")
+                return False
+        else:
+            print("✓ Ollama is signed in")
+            return True
+            
+    except subprocess.TimeoutExpired:
+        print("✗ Ollama command timed out")
+        return False
+    except FileNotFoundError:
+        print("✗ Ollama is not installed")
+        print("Please install Ollama first: https://ollama.com/")
+        return False
+    except Exception as e:
+        print(f"✗ Error checking Ollama: {e}")
+        return False
+
+def prompt_for_google_api_key():
+    """Prompt user for Google API key and handle saving"""
+    import getpass
+    
+    print("\nGoogle API Key Setup")
+    print("-" * 25)
+    print("To use Google's official Gemini API, you need an API key.")
+    print("You can get one from: https://aistudio.google.com/app/apikey")
+    print()
+    
+    while True:
+        try:
+            api_key = getpass.getpass("Enter your Google API key (or press Enter to cancel): ")
+            if not api_key.strip():
+                print("No API key provided. Skipping Google API setup.")
+                return None
+            
+            # Basic validation (Google API keys are typically 39 characters starting with 'AIza')
+            if len(api_key) < 20:
+                print("API key seems too short. Please check your key.")
+                continue
+            
+            # Ask if user wants to save the key
+            save_key = input("Save this API key for future use? (y/n): ").lower().strip()
+            should_save = save_key.startswith('y')
+            
+            return api_key, should_save
+            
+        except KeyboardInterrupt:
+            print("\nOperation cancelled.")
+            return None
+        except Exception as e:
+            print(f"Error reading input: {e}")
+            return None
+
+def select_model_provider():
+    """Prompt user to select model provider"""
+    from src.ai_agent.utils.settings_manager import get_settings_manager
+    
+    settings_manager = get_settings_manager()
+    current_provider = settings_manager.get_preferred_provider()
+    
+    print("\n" + "=" * 50)
+    print("VEXIS-1 AI Agent - Model Provider Selection")
+    print("=" * 50)
+    print()
+    print("Choose your AI model provider:")
+    print("1. Ollama (Local models)")
+    print("2. Google Official API (Gemini)")
+    print()
+    
+    if current_provider == "ollama":
+        print(f"Current preference: Ollama")
+    elif current_provider == "google":
+        print(f"Current preference: Google API")
+    
+    print()
+    
+    while True:
+        try:
+            choice = input("Select provider (1/2) [default: 1]: ").strip()
+            if not choice:
+                choice = "1"
+            
+            if choice == "1":
+                # Ollama selected
+                print("\nYou selected: Ollama (Local models)")
+                if not check_ollama_login():
+                    print("Failed to set up Ollama. Please try again or choose Google API.")
+                    continue
+                
+                settings_manager.set_preferred_provider("ollama")
+                print("✓ Provider set to Ollama")
+                return "ollama"
+                
+            elif choice == "2":
+                # Google API selected
+                print("\nYou selected: Google Official API (Gemini)")
+                
+                # Check if API key already exists
+                if settings_manager.has_google_api_key():
+                    print("✓ Google API key is already configured")
+                    settings_manager.set_preferred_provider("google")
+                    print("✓ Provider set to Google API")
+                    return "google"
+                
+                # Prompt for API key
+                result = prompt_for_google_api_key()
+                if result is None:
+                    print("Google API setup cancelled. Please select Ollama.")
+                    continue
+                
+                api_key, should_save = result
+                settings_manager.set_google_api_key(api_key, should_save)
+                settings_manager.set_preferred_provider("google")
+                
+                print("✓ Google API key configured")
+                print("✓ Provider set to Google API")
+                return "google"
+                
+            else:
+                print("Invalid choice. Please enter 1 or 2.")
+                
+        except KeyboardInterrupt:
+            print("\nOperation cancelled. Exiting.")
+            sys.exit(0)
+        except Exception as e:
+            print(f"Error: {e}")
+            continue
 
 def main():
     """Main entry point"""
@@ -429,14 +587,40 @@ def main():
     # Check for debug mode
     debug_mode = "--debug" in sys.argv
     
+    # Model selection - only prompt if not using --no-prompt flag
+    if "--no-prompt" not in sys.argv:
+        selected_provider = select_model_provider()
+        print(f"\nUsing provider: {selected_provider}")
+    else:
+        from src.ai_agent.utils.settings_manager import get_settings_manager
+        settings_manager = get_settings_manager()
+        selected_provider = settings_manager.get_preferred_provider()
+        print(f"\nUsing saved provider preference: {selected_provider}")
+    
     print(f"\nAI Agent executing: {instruction}")
     
     try:
         from ai_agent.user_interface.two_phase_app import TwoPhaseAIAgent
         
-        # Initialize the agent
+        # Update config with selected provider
         config_path = current_dir / "config.yaml"
         agent = TwoPhaseAIAgent(config_path=str(config_path) if config_path.exists() else None)
+        
+        # Update the vision client configuration with the selected provider
+        if hasattr(agent, 'engine') and hasattr(agent.engine, 'model_runner'):
+            model_runner = agent.engine.model_runner
+            if hasattr(model_runner, 'vision_client'):
+                # Update the vision client config
+                from src.ai_agent.utils.settings_manager import get_settings_manager
+                settings_manager = get_settings_manager()
+                
+                # Reload config with updated provider settings
+                updated_config = model_runner.config.copy()
+                updated_config['preferred_provider'] = selected_provider
+                updated_config['google_api_key'] = settings_manager.get_google_api_key()
+                
+                # Reinitialize vision client with updated config
+                model_runner.vision_client.config = updated_config
         
         # Run the instruction
         options = {"debug": debug_mode}

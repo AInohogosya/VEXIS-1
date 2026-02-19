@@ -54,3 +54,10 @@ class TaskGenerationError(AIAgentException):
 class CommandParsingError(AIAgentException):
     """Command parsing error"""
     pass
+
+
+class VerificationError(AIAgentException):
+    """Task verification error"""
+    def __init__(self, message, task=None):
+        super().__init__(message)
+        self.task = task

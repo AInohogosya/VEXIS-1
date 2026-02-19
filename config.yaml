@@ -8,3 +8,27 @@ api:
   local_model: "gemini-3-flash-preview:latest"
   timeout: 120
   max_retries: 3
+
+# Task Completion Verification Settings
+verification:
+  enabled: true
+  confidence_threshold: 0.8
+  max_verification_attempts: 3
+  max_regenerations: 2
+  verification_model: "gemini-3-flash-preview:latest"
+  verification_timeout: 60
+  auto_regenerate: true
+
+# Two-Phase Engine Settings
+engine:
+  click_delay: 0.1
+  typing_delay: 0.05
+  scroll_duration: 0.5
+  drag_duration: 0.3
+  screenshot_quality: 95
+  screenshot_format: "PNG"
+  max_task_retries: 3
+  max_command_retries: 3
+  command_timeout: 30
+  task_timeout: 300
+  max_rebuilds_per_session: 3

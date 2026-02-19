@@ -67,13 +67,11 @@ test = [
 
 [project.scripts]
 vexis-1 = "ai_agent.user_interface.main_app:main"
-vexis-1-enhanced = "ai_agent.user_interface.enhanced_app:main"
-vexis-1-validate = "ai_agent.user_interface.shell_wrapper:main"
+vexis-1-enhanced = "ai_agent.user_interface.two_phase_app:main"
 
 [project.urls]
 Homepage = "https://github.com/AInohogosya/VEXIS-1"
 Repository = "https://github.com/AInohogosya/VEXIS-1"
-Documentation = "https://github.com/AInohogosya/VEXIS-1/blob/main/docs/"
 "Bug Reports" = "https://github.com/AInohogosya/VEXIS-1/issues"
 
 [tool.setuptools.packages.find]

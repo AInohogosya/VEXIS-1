@@ -19,7 +19,6 @@ class TaskType(Enum):
     """Task types for 2-Phase Architecture"""
     TASK_GENERATION = "task_generation"
     COMMAND_PARSING = "command_parsing"
-    REBUILD_PLANNING = "rebuild_planning"
 
 
 @dataclass
@@ -31,8 +30,8 @@ class ModelRequest:
     image_format: str = "PNG"
     context: Optional[Dict[str, Any]] = None
     parameters: Optional[Dict[str, Any]] = None
-    max_tokens: int = 1000
-    temperature: float = 0.7
+    max_tokens: int = 5000
+    temperature: float = 1.0
     timeout: int = 30
 
 
@@ -72,10 +71,19 @@ Analyze the screen and generate a numbered list of specific tasks to achieve the
 3. Focus on a single action
 4. Be feasible given the current screen state
 
+IMPORTANT: Please provide a MORE DETAILED step list. Break down complex actions into smaller, more granular steps. For example, instead of "Open the browser and search", break it into:
+1. Click on the browser icon
+2. Wait for browser to open
+3. Click in the search bar
+4. Type the search query
+5. Press Enter
+
+Each step should be atomic and executable as a single GUI action. Consider intermediate states, loading times, and necessary sub-steps that might be overlooked.
+
 Response format:
-1. [First specific task]
-2. [Second specific task]
-3. [Third specific task]
+1. [First detailed, atomic task]
+2. [Second detailed, atomic task]
+3. [Third detailed, atomic task]
 ...
 
 Provide only the numbered list; do not include additional text.""",
@@ -88,6 +96,49 @@ Current Screen: [Screenshot provided]
 Previous Screen: [previous screenshot provided]
 Previous Command: {previous_command}
 
+YOUR PREVIOUS ACTIONS - COMPLETED STEPS BY YOU:
+The following is a complete history of actions that YOU have already performed in this task. These are YOUR completed steps:
+{previous_save_content}
+
+CRITICAL UNDERSTANDING - THESE ARE YOUR ACTIONS:
+- EVERY item in "YOUR PREVIOUS ACTIONS" is an action that YOU personally executed
+- These are COMPLETED steps in your current task progression
+- You MUST NOT repeat actions that are already completed
+- You MUST build upon these completed steps to progress forward
+- If you created a folder/file in previous actions, it now EXISTS and should be USED, not recreated
+
+CRITICAL - EXTRACTED INFORMATION ANALYSIS:
+{extracted_information}
+
+PRIORITY ANALYSIS OF EXTRACTED DATA:
+1. **IMMEDIATELY RELEVANT**: Filenames, URLs, error messages, confirmation codes - USE THESE NOW
+2. **CONTEXTUALLY IMPORTANT**: UI element states, window titles, button labels - REFERENCE THESE
+3. **PATTERNS TO FOLLOW**: Successful interaction methods, working coordinates - REPLICATE THESE
+4. **AVOID THESE**: Failed approaches, broken elements, incorrect coordinates - DO NOT REPEAT
+
+COORDINATES TO AVOID (previously failed):
+{failure_coordinates}
+
+INTELLIGENT ACTION SELECTION:
+Based on the extracted information above:
+- If you have extracted filenames/URLs, prioritize actions that use them
+- If you have error messages, address the specific error mentioned
+- If you have confirmation codes, use them in the next action
+- If you have successful coordinates from similar actions, use those
+- If previous attempts failed, analyze WHY and choose a fundamentally different approach
+
+CRITICAL - AVOID REPEATING YOUR COMPLETED ACTIONS:
+Analyze "YOUR PREVIOUS ACTIONS" to identify:
+1. Actions that YOU have already completed successfully
+2. Objects that YOU have already created (folders, files, etc.)
+3. Steps that are already done and should not be repeated
+
+If you detect that you are trying to repeat an action you already completed:
+- STOP and recognize that the step is already done
+- Use the object/result you created in the next step
+- Move forward to the next logical step in the task
+- If no progress is possible, output END to stop execution
+
 Available Commands:
 - click(x, y) - Click at normalized coordinates (0.0-1.0)
 - double_click(x, y) - Double-click at normalized coordinates
@@ -97,44 +148,37 @@ Available Commands:
 - drag(start_x, start_y, end_x, end_y) - Drag from start to end coordinates
 - scroll(direction, amount) - Scroll (direction: up/down/left/right, amount: 1-10)
 - END - End task execution
-- REBUILD - Trigger self-repair process when stuck or failed
 
 Use normalized coordinates (0.0-1.0). The top-left corner of the screen is (0.0, 0.0), the bottom-right corner is (1.0, 1.0).
 
 Convert the task description into the appropriate command. Assess the situation and output only one optimal command to execute next.
 
-Important: Do not output descriptions; output only commands. Write only one command per line.
-If you detect procedure inconsistencies, loops, or stuck situations, immediately output REBUILD to trigger self-repair.
+IMPORTANT: You must use the following output format for every operation:
+Line 1: Reasoning: [Why this action is being taken, considering YOUR previous actions AND extracted information]
+Line 2: Target: [Specific target for the action]
+Line 3: [The command to execute]
+Line 4: save("[Content describing YOUR action and any useful information for future reference"])
 
-Example:
-click(0.5, 0.3)
-text("Search query")
-key("enter")
+SAVE COMMAND - YOUR ACTION LOG:
+The save command is YOUR personal action log and reflection tool. Use it to:
+- Record YOUR completed actions for future reference
+- Preserve information about objects YOU created (folders, files, etc.)
+- Document results of YOUR actions for the next step
+- Store extracted information that YOU will need later
+- Create a trail of YOUR progress through the task
+
+This ensures YOU can track what YOU have already accomplished and avoid repeating completed steps.
+
+Do not output descriptions; output only the formatted 4-line structure. Write only one command per line.
+
+Example with learning from YOUR previous actions and extracted information:
+Reasoning: Based on my previous action, I created 'ProjectFolder' which now exists. I need to open this folder I created to continue the task.
+Target: ProjectFolder that I created in the previous step
+click(0.4, 0.6)
+save("Opened the ProjectFolder I created earlier, now ready for next step")
+
 END""",
             
-            TaskType.REBUILD_PLANNING.value: """You are an AI recovery specialist. Analyze the failure context and generate a revised task list to achieve the original goal.
-
-Original Instruction: {original_instruction}
-Original Task List: {original_task_list}
-Execution History: {execution_history}
-Current Screen: [Screenshot provided]
-
-Analyze the above data and identify what went wrong. Create a revised numbered task list that addresses the failure and provides a clear path to achieve the original goal.
-
-Requirements:
-1. Learn from the execution history to avoid repeating mistakes
-2. Adapt to the current screen state
-3. Provide specific, actionable tasks
-4. Maintain the original goal focus
-5. Break down complex steps if needed
-
-Response format:
-1. [Revised first task]
-2. [Revised second task]
-3. [Revised third task]
-...
-
-Provide only the numbered list; do not include additional text.""",
         }
     
     def get_template(self, task_type: TaskType) -> str:
@@ -148,11 +192,23 @@ Provide only the numbered list; do not include additional text.""",
 
 
 class ModelRunner:
-    """2-Phase Architecture Model Runner: Ollama Cloud Models Only"""
+    """2-Phase Architecture Model Runner: Ollama and Google Cloud Models"""
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
+        # Load base config
         self.config = config or load_config().api.__dict__
         self.logger = get_logger("model_runner")
+        
+        # Load settings manager to get API keys and preferences
+        try:
+            from ..utils.settings_manager import get_settings_manager
+            settings_manager = get_settings_manager()
+            
+            # Override config with settings from settings manager
+            self.config['google_api_key'] = settings_manager.get_google_api_key()
+            self.config['preferred_provider'] = settings_manager.get_preferred_provider()
+        except ImportError:
+            self.logger.warning("Settings manager not available, using config only")
         
         # Initialize components
         self.vision_client = VisionAPIClient(self.config)
@@ -160,8 +216,9 @@ class ModelRunner:
         
         self.logger.info(
             "Model runner initialized for 2-Phase Architecture",
-            provider="ollama",
-            model=self.config.get("local_model", "ollama-cloud-model:latest"),
+            preferred_provider=self.config.get("preferred_provider", "ollama"),
+            model=self.config.get("local_model", "gemini-3-flash-preview:latest"),
+            google_api_configured=bool(self.config.get("google_api_key")),
         )
     
     def run_model(self, request: ModelRequest) -> ModelResponse:
@@ -175,15 +232,28 @@ class ModelRunner:
             # Format prompt
             prompt = self._format_prompt(request)
             
-            # Create API request for AI model via Ollama
+            # Create API request for AI model via selected provider
+            # Determine provider based on configuration
+            from .vision_api_client import APIProvider
+            provider_enum = None
+            model_name = None
+            
+            preferred_provider = self.config.get("preferred_provider", "ollama")
+            if preferred_provider == "google" and self.config.get("google_api_key"):
+                provider_enum = APIProvider.GOOGLE
+                model_name = "gemini-3-flash-preview"  # Google's model
+            else:
+                provider_enum = APIProvider.OLLAMA
+                model_name = self.config.get("local_model", "gemini-3-flash-preview:latest")
+            
             api_request = APIRequest(
                 prompt=prompt,
                 image_data=request.image_data,
                 image_format=request.image_format,
                 max_tokens=request.max_tokens,
                 temperature=request.temperature,
-                model=self.config.get("local_model", "gemini-3-flash-preview:latest"),
-                provider=APIProvider.OLLAMA,
+                model=model_name,
+                provider=provider_enum,
             )
             
             # Make API call
@@ -243,7 +313,7 @@ class ModelRunner:
         if not request.prompt:
             raise ValidationError("Prompt cannot be empty", "prompt", request.prompt)
         
-        if request.max_tokens < 1 or request.max_tokens > 4000:
+        if request.max_tokens < 1 or request.max_tokens > 7000:
             raise ValidationError("Invalid max_tokens", "max_tokens", request.max_tokens)
         
         if not (0.0 <= request.temperature <= 2.0):
@@ -322,37 +392,6 @@ class ModelRunner:
         
         return self.run_model(request)
     
-    def generate_rebuild_plan(self, original_instruction: str, original_task_list: List[str], execution_history: List[str], current_screenshot: bytes) -> ModelResponse:
-        """Generate revised task list for recovery/rebuild scenario"""
-        # Validate inputs
-        if not original_instruction:
-            raise ValidationError("Original instruction cannot be empty", "original_instruction", original_instruction)
-        
-        if original_task_list is None:
-            original_task_list = []
-        
-        if execution_history is None:
-            execution_history = []
-        
-        if not current_screenshot:
-            raise ValidationError("Current screenshot cannot be empty", "current_screenshot", current_screenshot)
-        
-        # Format context variables
-        context = {
-            "original_instruction": original_instruction,
-            "original_task_list": "\n".join([f"{i+1}. {task}" for i, task in enumerate(original_task_list)]) if original_task_list else "No previous tasks",
-            "execution_history": "\n".join([f"- {cmd}" for cmd in execution_history[-10:]]) if execution_history else "No execution history"
-        }
-        
-        request = ModelRequest(
-            task_type=TaskType.REBUILD_PLANNING,
-            prompt=original_instruction,  # Primary prompt is the original instruction
-            image_data=current_screenshot,
-            context=context,
-            parameters={},
-        )
-        
-        return self.run_model(request)
 
 
 # Global model runner instance

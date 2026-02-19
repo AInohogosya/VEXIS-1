@@ -7,6 +7,7 @@ import base64
 import io
 import json
 import time
+import uuid
 from typing import Optional, Dict, Any, List, Union, BinaryIO
 from dataclasses import dataclass
 from datetime import datetime
@@ -28,8 +29,9 @@ from ..utils.config import load_config
 
 
 class APIProvider(Enum):
-    """Supported API providers - Ollama only"""
+    """Supported API providers"""
     OLLAMA = "ollama"
+    GOOGLE = "google"
 
 
 @dataclass
@@ -51,26 +53,40 @@ class APIRequest:
     prompt: str
     image_data: Optional[bytes] = None
     image_format: str = "PNG"
-    max_tokens: int = 1000
-    temperature: float = 0.7
+    max_tokens: int = 5000
+    temperature: float = 1.0
     model: Optional[str] = None
     provider: Optional[APIProvider] = None
 
 
 class VisionAPIClient:
-    """Vision API client with Ollama only"""
+    """Vision API client with Ollama and Google support"""
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         self.config = config or load_config().api.__dict__
         self.logger = get_logger("vision_api_client")
         
-        # Initialize only Ollama provider
+        # Initialize providers
         self.ollama_provider = OllamaProvider(self.config)
-        self.current_provider = self.ollama_provider
+        
+        # Initialize Google provider only if API key is available
+        self.google_provider = None
+        if self.config.get("google_api_key"):
+            from .google_provider import GoogleProvider
+            self.google_provider = GoogleProvider(self.config)
+        
+        # Set current provider based on configuration
+        preferred_provider = self.config.get("preferred_provider", "ollama")
+        if preferred_provider == "google" and self.google_provider:
+            self.current_provider = self.google_provider
+        else:
+            self.current_provider = self.ollama_provider
         
         self.logger.info(
-            "Vision API client initialized - Ollama only",
+            "Vision API client initialized",
             ollama_available=self._test_ollama_availability(),
+            google_available=self.google_provider is not None,
+            current_provider=self.current_provider.name,
         )
     
     
@@ -85,26 +101,35 @@ class VisionAPIClient:
             return False
     
     def analyze_image(self, request: APIRequest) -> APIResponse:
-        """Analyze image using Ollama only"""
+        """Analyze image using the specified or current provider"""
         start_time = time.time()
         
         # Validate request
         self._validate_request(request)
         
+        # Determine which provider to use
+        provider = None
+        if request.provider == APIProvider.GOOGLE and self.google_provider:
+            provider = self.google_provider
+        elif request.provider == APIProvider.OLLAMA:
+            provider = self.ollama_provider
+        else:
+            # Use current provider
+            provider = self.current_provider
         
         try:
             self.logger.debug(
-                "Using Ollama for vision analysis",
-                model=request.model or self.ollama_provider.default_model,
+                f"Using {provider.name} for vision analysis",
+                model=request.model or provider.default_model,
             )
             
-            response = self.ollama_provider.analyze_image(request)
+            response = provider.analyze_image(request)
             
             latency = time.time() - start_time
             response.latency = latency
             
             self.logger.info(
-                "Ollama image analysis successful",
+                f"{provider.name} image analysis successful",
                 model=response.model,
                 tokens_used=response.tokens_used,
                 latency=latency,
@@ -115,7 +140,7 @@ class VisionAPIClient:
             
         except Exception as e:
             latency = time.time() - start_time
-            error_msg = f"Ollama analysis failed: {e}"
+            error_msg = f"{provider.name} analysis failed: {e}"
             
             self.logger.error(error_msg)
             
@@ -123,7 +148,7 @@ class VisionAPIClient:
                 success=False,
                 content="",
                 model="",
-                provider="ollama",
+                provider=provider.name,
                 latency=latency,
                 error=error_msg,
             )
@@ -146,17 +171,19 @@ class VisionAPIClient:
             except Exception as e:
                 raise ValidationError(f"Invalid image format: {e}", "image_data", "format_error")
         
-        if request.max_tokens < 1 or request.max_tokens > 4000:
+        if request.max_tokens < 1 or request.max_tokens > 7000:
             raise ValidationError("Invalid max_tokens", "max_tokens", request.max_tokens)
         
         if not (0.0 <= request.temperature <= 2.0):
             raise ValidationError("Invalid temperature", "temperature", request.temperature)
     
     def get_available_providers(self) -> List[str]:
-        """Get list of available providers - Ollama only"""
+        """Get list of available providers"""
         providers = []
         if self._test_ollama_availability():
             providers.append("ollama")
+        if self.google_provider:
+            providers.append("google")
         return providers
     
     def get_current_provider(self) -> str:
@@ -164,7 +191,7 @@ class VisionAPIClient:
         return self.current_provider.name
     
     def test_providers(self) -> Dict[str, bool]:
-        """Test Ollama provider only"""
+        """Test available providers"""
         results = {}
         
         # Test Ollama
@@ -187,6 +214,28 @@ class VisionAPIClient:
         except Exception as e:
             results["ollama"] = False
             self.logger.warning("Ollama provider test failed", error=str(e))
+        
+        # Test Google if available
+        if self.google_provider:
+            try:
+                test_request = APIRequest(
+                    prompt="Describe this image briefly.",
+                    image_data=self._create_test_image(),
+                    max_tokens=50,
+                    temperature=0.1,
+                )
+                
+                response = self.google_provider.analyze_image(test_request)
+                results["google"] = response.success
+                
+                if response.success:
+                    self.logger.info("Google provider test passed")
+                else:
+                    self.logger.warning("Google provider test failed", error=response.error)
+                    
+            except Exception as e:
+                results["google"] = False
+                self.logger.warning("Google provider test failed", error=str(e))
         
         return results
     
@@ -285,11 +334,15 @@ class OllamaProvider:
             import base64
             
             # Prepare the request payload for /api/chat endpoint
+            # Add unique identifier to bypass caching
+            unique_id = str(uuid.uuid4())
+            unique_prompt = f"Unique Request ID: {unique_id}\n\n{request.prompt}"
+            
             payload = {
                 "model": request.model or self.default_model,
                 "messages": [{
                     "role": "user",
-                    "content": request.prompt,
+                    "content": unique_prompt,
                 }],
                 "stream": False,
                 "options": {

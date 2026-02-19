@@ -1,165 +1,274 @@
+<div align="center">
 
-<img width="1280" height="720" alt="VEXIS-1" src="https://github.com/user-attachments/assets/25197a5b-7b0f-4c78-9968-719dafdc4eed" />
+# VEXIS-1.1
 
-VEXIS-1 is a powerful vision-based AI agent for GUI automation that uses computer vision to understand and interact with graphical user interfaces.
+**Vision-based AI Agent for GUI Automation**
 
-## 🎯 Try It Now (No Setup Required)
+[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://python.org)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg)]()
 
-```bash
-python3 run.py "Take a screenshot"
-```
+*AI-powered visual understanding and intelligent automation*
 
-That's it! VEXIS-1 automatically handles setup and uses cloud models. No installation or account required.
+</div>
 
-**More examples:**
-```bash
-python3 run.py "Open calculator and do 2+2"
-python3 run.py "Open browser and go to google.com"
-```
+VEXIS-1.1 is an advanced AI agent that combines computer vision with intelligent automation to interact with graphical user interfaces naturally. By understanding screen content and context, VEXIS-1.1 can perform complex tasks across applications with human-like precision.
 
----
+## 🚀 Quick Start
 
-## 📋 What You Need to Know
-
-### ⚠️ **Safety First**
-VEXIS-1 can perform real actions on your computer - delete files, make purchases, send emails, etc. **Use at your own risk** and always monitor its actions.
-
-### 🖥️ Platform Support
-- **Primary**: macOS (fully tested)
-- **Secondary**: Windows, Linux (designed to work, less tested)
-
-### 🤖 How It Works
-1. **Vision-based**: Uses computer vision to see and understand your screen
-2. **Two-phase**: Plans tasks first, then executes them step-by-step
-3. **AI-powered**: Uses smart models to figure out what to do
-
-### 💻 What It Can Do
-- Take screenshots and analyze them
-- Open and use applications (calculator, browser, etc.)
-- Click buttons, type text, scroll
-- Navigate websites and interfaces
-- Automate repetitive GUI tasks
-
----
-
-## 🚀 Installation
-
-### Quick Install (Recommended)
+Get VEXIS-1.1 running in seconds with zero configuration:
 
 ```bash
 git clone https://github.com/AInohogosya/VEXIS-1.git
 cd VEXIS-1
-pip install -r requirements.txt
+python3 run.py "take a screenshot"
+```
+
+**Zero setup required** - VEXIS-1.1 automatically handles environment creation, dependency installation, and configuration.
+
+### 💡 Capabilities
+
+```bash
+# Mathematical operations
+python3 run.py "open calculator and compute 2+2"
+
+# Web navigation and search
+python3 run.py "open browser and search for AI automation"
+
+# Document creation and editing
+python3 run.py "create text document, write 'Hello World', and save"
+```
+
+---
+
+## ⚠️ Safety Notice
+
+**VEXIS-1.1 performs real operations on your system**  
+VEXIS-1.1 can execute actions including file deletion, purchases, and email sending. **Use responsibly** and maintain supervision during operation.
+
+## ✨ Core Features
+
+### � Advanced Vision Intelligence
+- **Visual Context Understanding**: Interprets screen content with semantic awareness
+- **Adaptive Decision Making**: Selects optimal actions based on current interface state
+- **Learning from Experience**: Improves execution strategies through interaction patterns
+
+### ⚡ Two-Phase Execution Architecture
+1. **Strategic Planning**: Decomposes complex instructions into actionable steps
+2. **Precision Execution**: Implements tasks with real-time visual feedback and verification
+
+### 🌐 Universal Platform Support
+- **macOS**: Native integration with full feature support
+- **Windows**: Comprehensive compatibility and testing
+- **Linux**: Active development and community testing
+
+## 📖 Documentation
+
+→ **[USAGE.md](USAGE.md)** - Comprehensive usage guide  
+→ **[Docker Guide](docker/README.md)** - Container deployment methods
+
+---
+
+## �️ Installation
+
+### ⚡ Automated Setup (Recommended)
+
+```bash
+git clone https://github.com/AInohogosya/VEXIS-1.git
+cd VEXIS-1
+python3 run.py "take a screenshot"
+```
+
+**Automatically configured:**
+- ✅ Virtual environment creation and activation
+- ✅ Dependency resolution and installation
+- ✅ Configuration file initialization
+- ✅ System validation and testing
+
+### 🔧 Manual Installation
+
+```bash
+git clone https://github.com/AInohogosya/VEXIS-1.git
+cd VEXIS-1
 pip install -e .
 ```
 
-That's it! You're ready to go.
+### 🤖 AI Model Integration
 
-### Local Models Setup (Optional)
+VEXIS-1.1 supports multiple AI providers for different use cases:
 
-If you want to use local AI models instead of cloud:
+#### Local Processing (Ollama)
+- Install [Ollama](https://ollama.ai/download) for local model execution
+- Initialize with `ollama signin` for cloud model access
+- Benefits: Complete privacy, offline operation, no ongoing costs
 
-1. Install [Ollama](https://ollama.ai/download)
-2. Start Ollama service
-3. Run `ollama signin` for cloud model access (optional)
+#### Cloud Processing (Google Gemini)
+- Obtain API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
+- Leverage Google's infrastructure for enhanced performance
+- Benefits: Higher accuracy, scalability, managed infrastructure
 
 ---
 
-## 💻 Usage
+## 🎮 Usage
 
-### Basic Commands
+### Basic Interface
 ```bash
-# Simple instruction
+# Natural language commands
 python3 run.py "your instruction here"
 
-# Debug mode (see what it's thinking)
-python3 run.py "your instruction" --debug
+# Enhanced debugging mode
+python3 run.py "instruction" --debug
 ```
 
 ---
 
-## 🧠 AI Models Used
+## 🧠 Model Architecture
 
-This project primarily uses:
-- **AI Models via Ollama** - Local and cloud-based models for vision-based tasks
-- **Ollama API** for model inference
+**VEXIS-1.1 integrates with leading AI providers:**
+
+### 🦙 Ollama (Local Intelligence)
+- **Architecture**: Local model deployment with privacy-first design
+- **Models**: Gemini 3 Flash Preview and other open-source models
+- **Advantages**: Data sovereignty, offline capability, cost efficiency
+
+### 🔵 Google Gemini (Cloud Intelligence)
+- **Architecture**: Google's production-grade API infrastructure
+- **Models**: Gemini 1.5 Flash with enterprise-grade reliability
+- **Advantages**: Enhanced accuracy, automatic scaling, managed reliability
+
+### 🎯 Provider Selection Strategy
+
+**Development & Prototyping**: Ollama provides rapid iteration without costs  
+**Production & Critical Workflows**: Google Gemini ensures reliability and performance
 
 ## ⚙️ Configuration
 
-Configure via `config.yaml`:
+### Runtime Configuration
+
+VEXIS-1.1 uses `config.yaml` for system-wide settings:
 
 ```yaml
 api:
-  preferred_provider: "ollama"
+  preferred_provider: "ollama"  # "ollama" or "google"
   local_endpoint: "http://localhost:11434"
   local_model: "gemini-3-flash-preview:latest"
   timeout: 120
   max_retries: 3
+  # API keys are managed interactively for security
 ```
 
-## 🏗️ Architecture
+### Command Interface
+```bash
+python3 run.py "instruction" --help           # Complete option reference
+python3 run.py "instruction" --debug          # Verbose execution logging
+python3 run.py "instruction" --no-prompt      # Skip provider selection
+```
 
-1. **Task Generation**: Analyzes instruction and creates task list
-2. **Execution**: Performs tasks step-by-step with visual feedback
+## 🏗️ System Architecture
 
-**Key Components:**
-- `TwoPhaseEngine` - Core execution engine
-- `ScreenshotCapture` - Screen capture and processing
-- `GUIAutomation` - Mouse/keyboard interactions
-- `ModelRunner` - AI model interface
+**Two-Phase Execution Model:**
+1. **Cognitive Planning**: Analyzes instructions and generates structured task sequences
+2. **Adaptive Execution**: Implements tasks with continuous visual feedback and error recovery
 
-## 📋 Dependencies
+**Core Components:**
+- `TwoPhaseEngine` - Central orchestration and execution management
+- `ScreenshotCapture` - High-fidelity screen acquisition and processing
+- `GUIAutomation` - Precise input simulation and interface interaction
+- `ModelRunner` - Unified AI provider abstraction layer
 
-**Core:**
-- `Pillow>=10.0.0` - Image processing
-- `pyautogui>=0.9.54` - GUI automation
-- `opencv-python>=4.8.0` - Computer vision
-- `numpy>=1.24.0` - Numerical computations
-- `pynput>=1.7.6` - Input device control
-- `ollama>=0.1.0` - Ollama client
+## 📦 Technical Requirements
 
-**AI/ML:**
-- `openai>=1.0.0` - OpenAI API
-- `anthropic>=0.7.0` - Anthropic API
-- `transformers>=4.35.0` - Hugging Face
-- `torch>=2.1.0` - PyTorch
+**Automated Dependency Management**
 
-**Platform-specific:**
-- `pyobjc-framework-Cocoa>=9.0` (macOS)
-- `pywin32>=306` (Windows)
-- `python-xlib>=0.33` (Linux)
+VEXIS-1.1's setup system automatically configures all required components:
 
-## 🐛 Troubleshooting
+### Core Dependencies
+- `Pillow>=10.0.0` - Advanced image processing and manipulation
+- `pyautogui>=0.9.54` - Cross-platform GUI automation framework
+- `opencv-python>=4.8.0` - Computer vision and image analysis
+- `numpy>=1.24.0` - High-performance numerical computing
+- `pynput>=1.7.6` - System-level input device control
 
-**Common Issues:**
-1. **Ollama connection**: Make sure Ollama runs at `http://localhost:11434`
-2. **Cloud access denied**: Run `ollama signin` with valid account
-3. **Model not found**: Check if `gemini-3-flash-preview:latest` is available in your region
-4. **Permission denied**: Grant accessibility permissions on macOS
-5. **Import errors**: Install missing dependencies
+### AI/ML Integration
+- `openai>=1.0.0` - OpenAI API client library
+- `anthropic>=0.7.0` - Anthropic Claude API integration
+- `transformers>=4.35.0` - Hugging Face model ecosystem
+- `torch>=2.1.0` - PyTorch deep learning framework
 
-**Getting Help:**
-- [Issues page](https://github.com/AInohogosya/VEXIS-1/issues)
-- Check logs for detailed errors
-- Verify environment setup
+### System Integration
+- `cryptography>=41.0.0` - Secure communications and data protection
+- `pydantic>=2.0.0` - Data validation and type safety
+- `structlog>=23.0.0` - Structured logging and observability
+- `rich>=13.0.0` - Advanced terminal interface and formatting
 
-## 🧪 Development
+### Platform-Specific Components
+- `pyobjc-framework-Cocoa>=9.0` (macOS) - Native macOS integration
+- `pywin32>=306` (Windows) - Windows API access
+- `python-xlib>=0.33` (Linux) - X11 window system interface
+
+## � Troubleshooting
+
+### Common Resolution Patterns
+
+#### Ollama Integration
+- **Connection Issues**: Verify Ollama service at `http://localhost:11434`
+- **Authentication**: Ensure valid account with `ollama signin`
+- **Model Availability**: Confirm `gemini-3-flash-preview:latest` accessibility
+
+#### Google API Integration
+- **API Key Validation**: Generate valid credentials from Google AI Studio
+- **Quota Management**: Monitor usage against free tier limitations
+- **Network Connectivity**: Ensure stable internet connection
+
+#### System-Level Issues
+- **Permission Errors**: Configure accessibility permissions on macOS
+- **Dependency Conflicts**: Reinstall using automated setup process
+- **Configuration Reset**: Clear settings in `~/.vexis/settings.json`
+
+### Support Resources
+- [GitHub Issues](https://github.com/AInohogosya/VEXIS-1/issues) - Problem reporting and tracking
+- System logs provide detailed diagnostic information
+- Environment validation tools available in debug mode
+
+## 🧪 Development Environment
 
 ```bash
-pytest          # Run tests
-black src/       # Format code
-mypy src/        # Type checking
+pytest              # Execute test suite
+black src/          # Code formatting and style enforcement
+mypy src/           # Static type analysis and validation
 ```
 
-## 📄 License & Contributing
+## 📄 License & Contributions
 
-- **License**: MIT - see [LICENSE](LICENSE) file
-- **Contributing**: Fork → Create branch → Make changes → Add tests → Pull request
+- **License**: MIT License - see [LICENSE](LICENSE) for complete terms
+- **Contribution Process**: Fork → Feature Branch → Testing → Pull Request
+- **Code Standards**: Automated formatting, type checking, and test coverage
 
-## 📚 Documentation
+## 📚 Additional Resources
 
-Detailed docs in `docs/` directory and inline in source code (e.g., `src/ai_agent/core_processing/two_phase_engine.py`).
+- **Inline Documentation**: Comprehensive code-level documentation
+- **Configuration Reference**: Detailed `config.yaml` options
+- **Command Reference**: Complete CLI interface documentation via `--help`
+
+## 🛠️ Development Tools
+
+```bash
+# Post-installation commands
+vexis-1              # Standard AI agent interface
+vexis-1-enhanced     # Advanced two-phase execution engine
+pytest              # Comprehensive test execution
+black src/          # Automated code formatting
+mypy src/           # Static type checking and analysis
+```
 
 ---
 
-**Remember**: VEXIS-1 is a powerful automation tool. Use responsibly and always verify actions before running in production environments.
+<div align="center">
+
+**⚡ VEXIS-1.1 represents a new paradigm in intelligent automation. Deploy with care and verify critical operations.**
+
+**🌟 Support the project by giving us a star on GitHub!**
+
+[GitHub Repository](https://github.com/AInohogosya/VEXIS-1) | [Issue Tracker](https://github.com/AInohogosya/VEXIS-1/issues) | [Community Discussions](https://github.com/AInohogosya/VEXIS-1/discussions)
+
+</div>

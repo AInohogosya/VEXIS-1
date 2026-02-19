@@ -29,7 +29,6 @@ class CommandType(Enum):
     DRAG = "drag"
     SCROLL = "scroll"
     END = "end"
-    REBUILD = "rebuild"
 
 
 @dataclass
@@ -91,9 +90,6 @@ class CommandParser:
             CommandType.END: [
                 re.compile(r'^end\s*$', re.IGNORECASE),
             ],
-            CommandType.REBUILD: [
-                re.compile(r'^rebuild$', re.IGNORECASE),
-            ],
         }
     
     
@@ -107,37 +103,37 @@ class CommandParser:
             raise ValidationError("Command text cannot be empty", "command_text", command_text)
         
         try:
-            # Clean and validate input
-            cleaned_command = self._clean_command_text(command_text)
-            
-            # Try pattern-based parsing
-            parsed = self._parse_with_patterns(cleaned_command)
-            
-            if parsed:
-                return parsed
-            
-            # Check if this looks like a malformed command that should trigger REBUILD
-            # vs. just random text that should fail
-            if self._should_trigger_rebuild_for_malformed_command(cleaned_command):
-                return ParsedCommand(
-                    type=CommandType.REBUILD,
-                    parameters={},
-                    raw_text=command_text,
-                )
+            # Apply rule: Read from second line downwards
+            lines = command_text.strip().split('\n')
+            if len(lines) >= 2:
+                # Extract second line from bottom (click/text command)
+                second_from_bottom = lines[-2].strip()
+                # Extract final line (save command)
+                final_line = lines[-1].strip()
+                
+                # Parse the main command from second line from bottom
+                cleaned_command = self._clean_command_text(second_from_bottom)
+                parsed = self._parse_with_patterns(cleaned_command)
+                
+                if parsed:
+                    return parsed
             else:
-                # For completely invalid commands, raise validation error
-                raise ValidationError(f"Invalid command format: {command_text}", "command_text", command_text)
+                # Fallback to original parsing for single line commands
+                cleaned_command = self._clean_command_text(command_text)
+                parsed = self._parse_with_patterns(cleaned_command)
+                
+                if parsed:
+                    return parsed
+            
+            # For completely invalid commands, raise validation error
+            raise ValidationError(f"Invalid command format: {command_text}", "command_text", command_text)
             
         except ValidationError:
             # Re-raise validation errors - these are legitimate failures
             raise
         except Exception as e:
-            # For other exceptions, trigger REBUILD
-            return ParsedCommand(
-                type=CommandType.REBUILD,
-                parameters={},
-                raw_text=command_text,
-            )
+            # For other exceptions, fail the command
+            raise CommandParsingError(f"Failed to parse command: {command_text}")
     
     def _clean_command_text(self, command_text: str) -> str:
         """Clean and normalize command text"""
@@ -161,39 +157,7 @@ class CommandParser:
         
         return final_cleaned
     
-    def _should_trigger_rebuild_for_malformed_command(self, cleaned_command: str) -> bool:
-        """Determine if a malformed command should trigger REBUILD vs. failing"""
-        cleaned_lower = cleaned_command.lower()
         
-        # Commands that look like they're trying to be valid but malformed
-        rebuild_indicators = [
-            # Partial commands
-            cleaned_lower.startswith('click') and '(' not in cleaned_lower,
-            cleaned_lower.startswith('double_click') and '(' not in cleaned_lower,
-            cleaned_lower.startswith('right_click') and '(' not in cleaned_lower,
-            cleaned_lower.startswith('text') and '(' not in cleaned_lower,
-            cleaned_lower.startswith('key') and '(' not in cleaned_lower,
-            cleaned_lower.startswith('drag') and '(' not in cleaned_lower,
-            cleaned_lower.startswith('scroll') and '(' not in cleaned_lower,
-            
-            # Commands with malformed parameters
-            'click(' in cleaned_lower and not cleaned_lower.endswith(')'),
-            'double_click(' in cleaned_lower and not cleaned_lower.endswith(')'),
-            'right_click(' in cleaned_lower and not cleaned_lower.endswith(')'),
-            'text(' in cleaned_lower and not cleaned_lower.endswith(')'),
-            'key(' in cleaned_lower and not cleaned_lower.endswith(')'),
-            'drag(' in cleaned_lower and not cleaned_lower.endswith(')'),
-            'scroll(' in cleaned_lower and not cleaned_lower.endswith(')'),
-            
-            # Commands that look like they have coordinate issues
-            'click(' in cleaned_lower and cleaned_lower.count(',') != 1,
-            'double_click(' in cleaned_lower and cleaned_lower.count(',') != 1,
-            'right_click(' in cleaned_lower and cleaned_lower.count(',') != 1,
-            'drag(' in cleaned_lower and cleaned_lower.count(',') != 3,
-        ]
-        
-        return any(rebuild_indicators)
-    
     def _parse_with_patterns(self, command_text: str) -> Optional[ParsedCommand]:
         """Parse command using strict regex patterns"""
         command_lower = command_text.lower()
@@ -252,10 +216,6 @@ class CommandParser:
                 
             elif command_type == CommandType.END:
                 # END command: no parameters
-                parameters = {}
-            
-            elif command_type == CommandType.REBUILD:
-                # REBUILD command: no parameters
                 parameters = {}
             
             return ParsedCommand(

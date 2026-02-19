@@ -171,6 +171,7 @@ $RECYCLE.BIN/
 *.tmp
 temp/
 logs/
+work_logs/
 screenshots/
 captures/
 downloads/
@@ -208,6 +209,10 @@ pip-delete-this-directory.txt
 .mypy_cache/
 .dmypy.json
 dmypy.json
+
+# VEXIS-1 specific settings and credentials
+.vexis/
+.vexis_settings.json
 
 # Requirements files (use pyproject.toml instead)
 requirements*.txt

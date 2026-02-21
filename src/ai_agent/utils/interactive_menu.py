@@ -7,6 +7,13 @@ import sys
 import tty
 import termios
 from typing import List, Tuple, Optional
+from rich.console import Console
+from rich.live import Live
+from rich.panel import Panel
+from rich.text import Text
+from rich.align import Align
+from rich.columns import Columns
+from rich.table import Table
 
 class Colors:
     """ANSI color codes for terminal output"""
@@ -56,7 +63,7 @@ class MenuItem:
         self.icon = icon
 
 class InteractiveMenu:
-    """Interactive menu with arrow key navigation"""
+    """Interactive menu with arrow key navigation using Rich for smooth display"""
     
     def __init__(self, title: str, subtitle: str = ""):
         self.title = title
@@ -65,6 +72,9 @@ class InteractiveMenu:
         self.current_selection = 0
         self.show_current = False
         self.current_value = None
+        self.console = Console()
+        self.live = None
+        self._should_exit = False
         
     def add_item(self, title: str, description: str = "", value: str = None, icon: str = ""):
         """Add a menu item"""
@@ -105,79 +115,125 @@ class InteractiveMenu:
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
     
     def _render_menu(self):
-        """Render the menu with colors"""
-        # Clear screen and move cursor to top
-        print('\033[2J\033[H', end='')
+        """Render the menu using Rich components"""
+        # Create title text
+        title_text = Text(self.title, style="bold cyan")
+        title_text.append("\n" + "=" * len(self.title), style="cyan")
         
-        # Title
-        print(f"{Colors.BOLD}{Colors.BRIGHT_CYAN}{self.title}{Colors.RESET}")
-        print(f"{Colors.BRIGHT_CYAN}{'=' * len(self.title)}{Colors.RESET}")
-        print()
+        # Build menu content
+        content_lines = []
         
         if self.subtitle:
-            print(f"{Colors.CYAN}{self.subtitle}{Colors.RESET}")
-            print()
+            content_lines.append(Text(self.subtitle, style="cyan"))
+            content_lines.append(Text(""))
         
         # Show current preference if available
         if self.show_current and self.current_value:
             for item in self.items:
                 if item.value == self.current_value:
-                    print(f"{Colors.BRIGHT_GREEN}Current preference: {item.icon} {item.title}{Colors.RESET}")
+                    current_text = Text(f"Current preference: {item.icon} {item.title}", style="bright_green")
+                    content_lines.append(current_text)
                     break
-            print()
+            content_lines.append(Text(""))
         
         # Menu items
         for i, item in enumerate(self.items):
             if i == self.current_selection:
                 # Selected item - highlight with background
-                print(f"{Colors.BG_BRIGHT_BLUE}{Colors.BRIGHT_WHITE}  ▶ {item.icon} {item.title}{Colors.RESET}")
+                selected_text = Text(f"  ▶ {item.icon} {item.title}", style="on bright_blue white")
+                content_lines.append(selected_text)
                 if item.description:
-                    print(f"{Colors.BG_BRIGHT_BLUE}{Colors.BRIGHT_WHITE}     {item.description}{Colors.RESET}")
+                    desc_text = Text(f"     {item.description}", style="on bright_blue white")
+                    content_lines.append(desc_text)
             else:
                 # Normal item
-                print(f"  {Colors.BRIGHT_BLACK}{item.icon}{Colors.RESET} {Colors.WHITE}{item.title}{Colors.RESET}")
+                normal_text = Text(f"  {item.icon} {item.title}", style="white")
+                content_lines.append(normal_text)
                 if item.description:
-                    print(f"    {Colors.BRIGHT_BLACK}{item.description}{Colors.RESET}")
-            print()
+                    desc_text = Text(f"    {item.description}", style="bright_black")
+                    content_lines.append(desc_text)
+            content_lines.append(Text(""))
         
         # Instructions
-        print(f"{Colors.BRIGHT_YELLOW}Instructions:{Colors.RESET}")
-        print(f"{Colors.CYAN}  ↑/↓  Navigate menu{Colors.RESET}")
-        print(f"{Colors.CYAN}  Enter  Select option{Colors.RESET}")
-        print(f"{Colors.CYAN}  q/Ctrl+C  Cancel{Colors.RESET}")
+        instructions = [
+            "Instructions:",
+            "  ↑/↓  Navigate menu",
+            "  Enter  Select option", 
+            "  q/Ctrl+C  Cancel"
+        ]
+        
+        for instruction in instructions:
+            if instruction.startswith("Instructions:"):
+                content_lines.append(Text(instruction, style="bright_yellow"))
+            else:
+                content_lines.append(Text(instruction, style="cyan"))
+        
+        # Combine title and content
+        full_content = Text("\n").join([title_text] + content_lines)
+        
+        # Create panel
+        panel = Panel(
+            Align.left(full_content),
+            border_style="cyan",
+            padding=(1, 2)
+        )
+        
+        return panel
     
     def show(self) -> Optional[str]:
         """Display the interactive menu and return selected value"""
         if not self.items:
             return None
         
-        while True:
-            self._render_menu()
+        # Use Rich Live for smooth updates
+        with Live(
+            self._render_menu(),
+            console=self.console,
+            refresh_per_second=30,
+            transient=False,
+            auto_refresh=True
+        ) as live:
+            self.live = live
             
-            try:
-                key = self._get_key()
-                
-                if key == 'UP':
-                    self.current_selection = (self.current_selection - 1) % len(self.items)
-                elif key == 'DOWN':
-                    self.current_selection = (self.current_selection + 1) % len(self.items)
-                elif key in ('\r', '\n'):  # Enter
-                    selected_item = self.items[self.current_selection]
-                    print(f"\n{Colors.BRIGHT_GREEN}✓ Selected: {selected_item.icon} {selected_item.title}{Colors.RESET}")
-                    return selected_item.value
-                elif key.lower() == 'q':
-                    print(f"\n{Colors.BRIGHT_YELLOW}Operation cancelled{Colors.RESET}")
-                    return None
-                elif key == '\x03':  # Ctrl+C
-                    print(f"\n{Colors.BRIGHT_YELLOW}Operation cancelled{Colors.RESET}")
-                    return None
+            while not self._should_exit:
+                try:
+                    key = self._get_key()
                     
-            except KeyboardInterrupt:
-                print(f"\n{Colors.BRIGHT_YELLOW}Operation cancelled{Colors.RESET}")
-                return None
-            except Exception as e:
-                print(f"Error reading input: {e}")
-                return None
+                    if key == 'UP':
+                        self.current_selection = (self.current_selection - 1) % len(self.items)
+                        live.update(self._render_menu())
+                    elif key == 'DOWN':
+                        self.current_selection = (self.current_selection + 1) % len(self.items)
+                        live.update(self._render_menu())
+                    elif key in ('\r', '\n'):  # Enter
+                        selected_item = self.items[self.current_selection]
+                        self._should_exit = True
+                        live.stop()
+                        self.console.print(f"✓ Selected: {selected_item.icon} {selected_item.title}", style="bright_green")
+                        return selected_item.value
+                    elif key.lower() == 'q':
+                        self._should_exit = True
+                        live.stop()
+                        self.console.print("Operation cancelled", style="bright_yellow")
+                        return None
+                    elif key == '\x03':  # Ctrl+C
+                        self._should_exit = True
+                        live.stop()
+                        self.console.print("Operation cancelled", style="bright_yellow")
+                        return None
+                        
+                except KeyboardInterrupt:
+                    self._should_exit = True
+                    live.stop()
+                    self.console.print("Operation cancelled", style="bright_yellow")
+                    return None
+                except Exception as e:
+                    self._should_exit = True
+                    live.stop()
+                    self.console.print(f"Error reading input: {e}", style="red")
+                    return None
+        
+        return None
 
 def confirm_dialog(message: str, default: bool = False) -> bool:
     """Show a confirmation dialog"""

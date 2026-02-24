@@ -8,12 +8,9 @@ import tty
 import termios
 from typing import List, Tuple, Optional
 from rich.console import Console
-from rich.live import Live
 from rich.panel import Panel
 from rich.text import Text
 from rich.align import Align
-from rich.columns import Columns
-from rich.table import Table
 
 class Colors:
     """ANSI color codes for terminal output"""
@@ -185,53 +182,49 @@ class InteractiveMenu:
         if not self.items:
             return None
         
-        # Use Rich Live for smooth updates
-        with Live(
-            self._render_menu(),
-            console=self.console,
-            refresh_per_second=30,
-            transient=False,
-            auto_refresh=True
-        ) as live:
-            self.live = live
+        # Simple approach: clear and redraw
+        while not self._should_exit:
+            # Clear screen and redraw menu
+            print("\033[2J\033[H", end="")
+            self.console.print(self._render_menu())
             
-            while not self._should_exit:
-                try:
-                    key = self._get_key()
-                    
-                    if key == 'UP':
-                        self.current_selection = (self.current_selection - 1) % len(self.items)
-                        live.update(self._render_menu())
-                    elif key == 'DOWN':
-                        self.current_selection = (self.current_selection + 1) % len(self.items)
-                        live.update(self._render_menu())
-                    elif key in ('\r', '\n'):  # Enter
-                        selected_item = self.items[self.current_selection]
-                        self._should_exit = True
-                        live.stop()
-                        self.console.print(f"✓ Selected: {selected_item.icon} {selected_item.title}", style="bright_green")
-                        return selected_item.value
-                    elif key.lower() == 'q':
-                        self._should_exit = True
-                        live.stop()
-                        self.console.print("Operation cancelled", style="bright_yellow")
-                        return None
-                    elif key == '\x03':  # Ctrl+C
-                        self._should_exit = True
-                        live.stop()
-                        self.console.print("Operation cancelled", style="bright_yellow")
-                        return None
-                        
-                except KeyboardInterrupt:
+            try:
+                key = self._get_key()
+                
+                if key == 'UP':
+                    self.current_selection = (self.current_selection - 1) % len(self.items)
+                elif key == 'DOWN':
+                    self.current_selection = (self.current_selection + 1) % len(self.items)
+                elif key in ('\r', '\n'):  # Enter
+                    selected_item = self.items[self.current_selection]
                     self._should_exit = True
-                    live.stop()
+                    # Clear and show selection
+                    print("\033[2J\033[H", end="")
+                    self.console.print(f"✓ Selected: {selected_item.icon} {selected_item.title}", style="bright_green")
+                    return selected_item.value
+                elif key.lower() == 'q':
+                    self._should_exit = True
+                    # Clear and show cancellation
+                    print("\033[2J\033[H", end="")
                     self.console.print("Operation cancelled", style="bright_yellow")
                     return None
-                except Exception as e:
+                elif key == '\x03':  # Ctrl+C
                     self._should_exit = True
-                    live.stop()
-                    self.console.print(f"Error reading input: {e}", style="red")
+                    # Clear and show cancellation
+                    print("\033[2J\033[H", end="")
+                    self.console.print("Operation cancelled", style="bright_yellow")
                     return None
+                    
+            except KeyboardInterrupt:
+                self._should_exit = True
+                print("\033[2J\033[H", end="")
+                self.console.print("Operation cancelled", style="bright_yellow")
+                return None
+            except Exception as e:
+                self._should_exit = True
+                print("\033[2J\033[H", end="")
+                self.console.print(f"Error reading input: {e}", style="red")
+                return None
         
         return None
 

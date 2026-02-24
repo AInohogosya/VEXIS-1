@@ -454,133 +454,162 @@ def prompt_for_google_api_key():
 def select_google_model():
     """Prompt user to select Google model with interactive menu"""
     from src.ai_agent.utils.settings_manager import get_settings_manager
-    from src.ai_agent.utils.interactive_menu import (
-        InteractiveMenu, Colors, success_message, warning_message
-    )
+    from src.ai_agent.utils.interactive_menu import InteractiveMenu
     
     settings_manager = get_settings_manager()
     current_model = settings_manager.get_google_model()
     
     menu = InteractiveMenu(
-        "Google Gemini Model Selection",
+        "Select Gemini Model",
         "Choose your preferred Gemini model:"
     )
     
     menu.add_item(
         "Gemini 3 Flash",
-        "Fast and efficient • Cost-effective for most tasks • Quick response times",
+        "Fast and efficient • Cost-effective for most tasks",
         "gemini-3-flash-preview",
         "🚀"
     )
     
     menu.add_item(
         "Gemini 3.1 Pro",
-        "Advanced reasoning • Best for complex problem-solving • Superior performance",
+        "Advanced reasoning • Best for complex problem-solving",
         "gemini-3.1-pro-preview",
         "🧠"
     )
     
-    # Set current selection
     menu.set_current_selection(current_model)
-    
-    # Show the menu
     selected_model = menu.show()
     
     if selected_model is None:
-        # User cancelled, return current model
-        model_name = "Gemini 3 Flash" if current_model == "gemini-3-flash-preview" else "Gemini 3.1 Pro"
-        warning_message("Using current model selection")
         return current_model
     
-    # Save the selection
     settings_manager.set_google_model(selected_model)
-    model_name = "Gemini 3 Flash" if selected_model == "gemini-3-flash-preview" else "Gemini 3.1 Pro"
-    success_message(f"Model set to: {model_name}")
     return selected_model
 
+def show_config_summary(provider: str, model: str = None):
+    """Display a clean configuration summary"""
+    from src.ai_agent.utils.interactive_menu import Colors
+    
+    print(f"\n{Colors.BOLD}{Colors.BRIGHT_CYAN}{'─' * 50}{Colors.RESET}")
+    print(f"{Colors.BOLD}{Colors.BRIGHT_GREEN}✓ Configuration Complete{Colors.RESET}")
+    print(f"{Colors.BOLD}{Colors.BRIGHT_CYAN}{'─' * 50}{Colors.RESET}")
+    
+    if provider == "ollama":
+        print(f"{Colors.WHITE}  Provider: {Colors.BRIGHT_YELLOW}Ollama (Local Models){Colors.RESET}")
+    else:
+        print(f"{Colors.WHITE}  Provider: {Colors.BRIGHT_YELLOW}Google Official API{Colors.RESET}")
+        if model:
+            model_name = "Gemini 3 Flash" if model == "gemini-3-flash-preview" else "Gemini 3.1 Pro"
+            print(f"{Colors.WHITE}  Model:    {Colors.BRIGHT_YELLOW}{model_name}{Colors.RESET}")
+    
+    
+    print(f"{Colors.BOLD}{Colors.BRIGHT_CYAN}{'─' * 50}{Colors.RESET}\n")
+
+def configure_google_provider():
+    """Configure Google provider with API key and model selection"""
+    from src.ai_agent.utils.settings_manager import get_settings_manager
+    from src.ai_agent.utils.interactive_menu import Colors
+    
+    settings_manager = get_settings_manager()
+    
+    # Check if API key already exists
+    if not settings_manager.has_google_api_key():
+        # Prompt for API key
+        result = prompt_for_google_api_key()
+        if result is None:
+            return None, None
+        
+        api_key, should_save = result
+        settings_manager.set_google_api_key(api_key, should_save)
+    
+    
+    # Select model
+    model = select_google_model()
+    if model is None:
+        model = settings_manager.get_google_model()
+    
+    settings_manager.set_preferred_provider("google")
+    return "google", model
+
+def configure_ollama_provider():
+    """Configure Ollama provider"""
+    from src.ai_agent.utils.settings_manager import get_settings_manager
+    
+    settings_manager = get_settings_manager()
+    
+    if not check_ollama_login():
+        return None
+    
+    settings_manager.set_preferred_provider("ollama")
+    return "ollama"
+
 def select_model_provider():
-    """Prompt user to select model provider with interactive menu"""
+    """Main configuration screen for model provider selection"""
     from src.ai_agent.utils.settings_manager import get_settings_manager
     from src.ai_agent.utils.interactive_menu import (
-        InteractiveMenu, Colors, success_message, error_message, warning_message
+        InteractiveMenu, Colors
     )
     
     settings_manager = get_settings_manager()
     current_provider = settings_manager.get_preferred_provider()
     
+    # Clear screen for clean configuration display
+    print(f"\033[2J\033[H", end="")
+    
+    # Show header
+    print(f"{Colors.BOLD}{Colors.BRIGHT_CYAN}{'═' * 50}{Colors.RESET}")
+    print(f"{Colors.BOLD}{Colors.BRIGHT_WHITE}     VEXIS-1.1 AI Agent Configuration{Colors.RESET}")
+    print(f"{Colors.BOLD}{Colors.BRIGHT_CYAN}{'═' * 50}{Colors.RESET}\n")
+    
+    # Provider selection
     menu = InteractiveMenu(
-        "VEXIS-1.1 AI Agent - Model Provider Selection",
-        "Choose your AI model provider:"
+        "Select AI Provider",
+        "Choose how you want to run AI models:"
     )
     
     menu.add_item(
-        "Ollama (Local Models)",
-        "Run models locally • Privacy-focused • Requires Ollama installation",
+        "Ollama (Local)",
+        "Run models locally via Ollama • Privacy-focused",
         "ollama",
         "🦊"
     )
     
     menu.add_item(
-        "Google Official API (Gemini)",
-        "Cloud-based AI • No local setup • Requires Google API key",
+        "Google Official API",
+        "Use Google's cloud Gemini models • Requires API key",
         "google",
         "🌐"
     )
     
-    # Set current preference
     menu.set_current_selection(current_provider)
-    
-    # Show the menu
     selected_provider = menu.show()
     
     if selected_provider is None:
-        # User cancelled, return current provider
-        provider_name = "Ollama" if current_provider == "ollama" else "Google API"
-        warning_message(f"Using current provider preference: {provider_name}")
-        
-        # If Google is selected, prompt for model selection
+        # User cancelled - use current settings
         if current_provider == "google":
-            select_google_model()
-        
+            model = settings_manager.get_google_model()
+            show_config_summary(current_provider, model)
+        else:
+            show_config_summary(current_provider)
         return current_provider
+    
     
     # Handle provider selection
     if selected_provider == "ollama":
-        # Ollama selected
-        if not check_ollama_login():
-            error_message("Failed to set up Ollama. Please try again.")
-            return select_model_provider()  # Retry
-        
-        settings_manager.set_preferred_provider("ollama")
-        success_message("Provider set to Ollama")
+        result = configure_ollama_provider()
+        if result is None:
+            # Failed - retry configuration
+            return select_model_provider()
+        show_config_summary("ollama")
         return "ollama"
         
     elif selected_provider == "google":
-        # Google API selected
-        # Check if API key already exists
-        if settings_manager.has_google_api_key():
-            settings_manager.set_preferred_provider("google")
-            success_message("Provider set to Google API")
-            
-            # Prompt for model selection
-            select_google_model()
-            return "google"
-        
-        # Prompt for API key
-        result = prompt_for_google_api_key()
-        if result is None:
-            error_message("Google API setup cancelled.")
-            return select_model_provider()  # Retry
-        
-        api_key, should_save = result
-        settings_manager.set_google_api_key(api_key, should_save)
-        settings_manager.set_preferred_provider("google")
-        
-        success_message("Google API key configured")
-        success_message("Provider set to Google API")
-        
-        # Prompt for model selection
-        select_google_model()
+        provider, model = configure_google_provider()
+        if provider is None:
+            # User cancelled API key entry - retry
+            return select_model_provider()
+        show_config_summary(provider, model)
         return "google"
 
 def main():

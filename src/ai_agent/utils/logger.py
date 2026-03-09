@@ -5,7 +5,10 @@ Zero-defect policy: detailed logging with structured output
 
 import sys
 import logging
-import structlog
+try:
+    import structlog
+except ImportError:
+    structlog = None
 from typing import Optional, Dict, Any
 from pathlib import Path
 from datetime import datetime
@@ -104,24 +107,27 @@ class AIAgentLogger:
             self.logger.addHandler(file_handler)
     
     def _setup_structlog(self):
-        """Setup structlog processor"""
-        structlog.configure(
-            processors=[
-                structlog.stdlib.filter_by_level,
-                structlog.stdlib.add_logger_name,
-                structlog.stdlib.add_log_level,
-                structlog.stdlib.PositionalArgumentsFormatter(),
-                structlog.processors.TimeStamper(fmt="iso"),
-                structlog.processors.StackInfoRenderer(),
-                structlog.processors.format_exc_info,
-                structlog.processors.UnicodeDecoder(),
-                structlog.processors.JSONRenderer() if self.enable_json else structlog.dev.ConsoleRenderer(),
-            ],
-            context_class=dict,
-            logger_factory=structlog.stdlib.LoggerFactory(),
-            wrapper_class=structlog.stdlib.BoundLogger,
-            cache_logger_on_first_use=True,
-        )
+        """Setup structlog with fallback to standard logging"""
+        if structlog is not None:
+            try:
+                structlog.configure(
+                    processors=[
+                        structlog.stdlib.filter_by_level,
+                        structlog.stdlib.add_logger_name,
+                        structlog.stdlib.add_log_level,
+                        structlog.stdlib.PositionalArgumentsFormatter(),
+                    ],
+                    context_class=dict,
+                    logger_factory=structlog.stdlib.LoggerFactory(),
+                    wrapper_class=structlog.stdlib.BoundLogger,
+                    cache_logger_on_first_use=True,
+                )
+                self.use_structlog = True
+            except Exception as e:
+                print(f"Warning: Could not configure structlog: {e}")
+                self.use_structlog = False
+        else:
+            self.use_structlog = False
     
     def debug(self, message: str, **kwargs):
         """Log debug message"""

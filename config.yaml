@@ -1,26 +1,25 @@
-# VEXIS-1.1 Configuration
-# Version: 1.1 (simplified versioning - 0.0.1 increments omitted)
-# Set AI_AGENT_LOCAL_ENDPOINT environment variable to override local_endpoint
+# VEXIS-1.2 Configuration
+# AI Agent System Configuration
 
+# API Configuration
 api:
   preferred_provider: "ollama"
-  # Use environment variable AI_AGENT_LOCAL_ENDPOINT to override this
   local_endpoint: "http://localhost:11434"
   local_model: "gemini-3-flash-preview:latest"
   timeout: 120
   max_retries: 3
 
-# Task Completion Verification Settings
+# Task Verification
 verification:
   enabled: true
   confidence_threshold: 0.8
-  max_verification_attempts: 3
+  max_attempts: 3
   max_regenerations: 2
-  verification_model: "gemini-3-flash-preview:latest"
-  verification_timeout: 60
+  model: "gemini-3-flash-preview:latest"
+  timeout: 60
   auto_regenerate: true
 
-# Two-Phase Engine Settings
+# Engine Settings
 engine:
   click_delay: 0.1
   typing_delay: 0.05

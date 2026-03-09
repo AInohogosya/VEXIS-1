@@ -1,6 +1,6 @@
-# Contributing to VEXIS-1.1
+# Contributing to VEXIS-1.2
 
-Welcome to VEXIS-1.1!  
+Welcome to VEXIS-1.2!  
 This project is still under development, but we strive to make it easy for anyone to join.  
 Whether you write code, find bugs, share ideas, or improve documentation—all contributions are welcome!
 
@@ -37,7 +37,7 @@ Whether you write code, find bugs, share ideas, or improve documentation—all c
 
 2. **Fork & Branch**  
    ```bash
-   git clone https://github.com/YOUR_USERNAME/VEXIS-1.1.git
-   cd VEXIS-1.1
+   git clone https://github.com/YOUR_USERNAME/VEXIS-1.2.git
+   cd VEXIS-1.2
    git checkout -b feature/awesome-new-thing   # or fix/bug-123
    

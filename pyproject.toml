@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "vexis-1.1"
-version = "1.1"
-description = "Vision-based AI agent for GUI automation\n\nNote: Version numbers follow simplified scheme (1.1 instead of 1.1.0.1)\nwith 0.0.1 increments omitted for easier maintenance."
+name = "vexis-1.2"
+version = "1.2"
+description = "Vision-based AI agent for GUI automation\n\nNote: Version numbers follow simplified scheme (1.2 instead of 1.2.0.1)\nwith 0.0.1 increments omitted for easier maintenance."
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
@@ -66,13 +66,13 @@ test = [
 ]
 
 [project.scripts]
-"vexis-1.1" = "ai_agent.user_interface.main_app:main"
-"vexis-1.1-enhanced" = "ai_agent.user_interface.two_phase_app:main"
+"vexis-1.2" = "ai_agent.user_interface.main_app:main"
+"vexis-1.2-enhanced" = "ai_agent.user_interface.two_phase_app:main"
 
 [project.urls]
-Homepage = "https://github.com/AInohogosya/VEXIS-1"
-Repository = "https://github.com/AInohogosya/VEXIS-1"
-"Bug Reports" = "https://github.com/AInohogosya/VEXIS-1/issues"
+Homepage = "https://github.com/AInohogosya/VEXIS-1.2"
+Repository = "https://github.com/AInohogosya/VEXIS-1.2"
+"Bug Reports" = "https://github.com/AInohogosya/VEXIS-1.2/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]

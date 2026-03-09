@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from .platform_detector import get_system_info, get_platform_detector
+from .keyboard_mapping import get_keyboard_mapping
 from ..utils.exceptions import ExecutionError, PlatformError, ValidationError
 from ..utils.logger import get_logger
 
@@ -63,6 +64,9 @@ class GUIAutomation:
         self.system_info = get_system_info()
         self.platform_detector = get_platform_detector()
         
+        # Initialize keyboard mapping
+        self.keyboard_mapping = get_keyboard_mapping()
+        
         # Initialize automation methods in order of preference
         self._automation_methods = self._initialize_automation_methods()
         
@@ -74,6 +78,8 @@ class GUIAutomation:
             platform=self.system_info.os_name,
             click_delay=self.click_delay,
             typing_delay=self.typing_delay,
+            keyboard_keys=len(self.keyboard_mapping._key_mappings),
+            os_specific_keys=len(self.keyboard_mapping.get_os_specific_keys()),
             methods=[getattr(method, '__name__', method.__class__.__name__) for method in self._automation_methods],
         )
     
@@ -135,11 +141,21 @@ class GUIAutomation:
         )
     
     def press_keys(self, keys: str) -> AutomationResult:
-        """Press key combination"""
+        """Press key combination with OS-specific mapping"""
+        # Normalize key combination using keyboard mapping
+        normalized_keys = self.keyboard_mapping.normalize_key_combination(keys)
+        
+        self.logger.debug(
+            "Key combination normalized",
+            original=keys,
+            normalized=normalized_keys,
+            platform=self.system_info.os_name
+        )
+        
         return self._execute_with_fallback(
             "press_keys",
-            lambda method: method.press_keys(keys),
-            keys=keys
+            lambda method: method.press_keys(normalized_keys),
+            keys=normalized_keys
         )
     
     def _execute_with_fallback(self, action: str, operation: callable, **kwargs) -> AutomationResult:
@@ -203,6 +219,30 @@ class GUIAutomation:
         
         return abs_x, abs_y
     
+    def get_available_keys(self) -> List[str]:
+        """Get list of available keys for current platform"""
+        return list(self.keyboard_mapping.detect_available_keys())
+    
+    def get_key_info(self, key_name: str) -> Optional[Dict[str, Any]]:
+        """Get information about a specific key"""
+        mapping = self.keyboard_mapping.get_key_mapping(key_name)
+        if mapping:
+            return {
+                "name": mapping.name,
+                "pyautogui_key": mapping.pyautogui_key,
+                "category": mapping.category.value,
+                "description": mapping.description,
+                "os_specific": mapping.os_specific,
+                "alternatives": mapping.alternatives,
+            }
+        return None
+    
+    def is_key_available(self, key_name: str) -> bool:
+        """Check if a key is available on the current platform"""
+        available_keys = self.get_available_keys()
+        normalized_key = self.keyboard_mapping.get_pyautogui_key(key_name)
+        return normalized_key in available_keys if normalized_key else False
+    
     # Platform-specific automation methods
     
     def _automation_pyautogui(self) -> 'PyAutoGUIAutomation':
@@ -265,4 +305,20 @@ class PyAutoGUIAutomation:
     
     def press_keys(self, keys: str):
         import pyautogui
-        pyautogui.hotkey(*keys.split('+'))
+        
+        # Handle special OS-specific keys
+        if '+' in keys:
+            # Key combination
+            key_list = keys.split('+')
+            pyautogui.hotkey(*key_list)
+        else:
+            # Single key
+            try:
+                pyautogui.press(keys)
+            except Exception:
+                # Fallback for special keys that might not be recognized
+                self.logger.warning(f"Key '{keys}' not recognized by PyAutoGUI")
+                # Try to type the key as a character
+                pyautogui.typewrite(keys, interval=0.05)
+        
+        time.sleep(0.1)

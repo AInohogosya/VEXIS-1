@@ -59,123 +59,76 @@ class PromptTemplate:
     def _load_templates(self) -> Dict[str, str]:
         """Load prompt templates for 2-Phase Architecture"""
         return {
-            TaskType.TASK_GENERATION.value: """You are an AI assistant operating the OS. Analyze the user's instructions and the current screen state to generate a specific GUI automation task list.
+            TaskType.TASK_GENERATION.value: """You are an AI assistant that analyzes user instructions and screen state to create a step-by-step task list.
 
 User Instruction: {instruction}
 
 Current Screen: [Screenshot provided]
 
-Analyze the screen and generate a numbered list of specific tasks to achieve the user's instruction. Each task must meet the following conditions:
-1. Be specific and actionable
-2. Be listed in sequential order
-3. Focus on a single action
-4. Be feasible given the current screen state
+Generate a numbered list of specific, sequential tasks to complete the instruction. Each task should:
+- Be a single, actionable step
+- Be atomic (can be done in one action)
+- Consider the current screen state
 
-IMPORTANT: Please provide a MORE DETAILED step list. Break down complex actions into smaller, more granular steps. For example, instead of "Open the browser and search", break it into:
-1. Click on the browser icon
-2. Wait for browser to open
-3. Click in the search bar
-4. Type the search query
+Break complex actions into smaller steps. Example: Instead of "Open browser and search", use:
+1. Click browser icon
+2. Wait for browser to open  
+3. Click search bar
+4. Type search query
 5. Press Enter
 
-Each step should be atomic and executable as a single GUI action. Consider intermediate states, loading times, and necessary sub-steps that might be overlooked.
-
-Response format:
-1. [First detailed, atomic task]
-2. [Second detailed, atomic task]
-3. [Third detailed, atomic task]
+Output format:
+1. [First task]
+2. [Second task]
+3. [Third task]
 ...
 
-Provide only the numbered list; do not include additional text.""",
+Provide only the numbered list.""",
             
-            TaskType.COMMAND_PARSING.value: """You are an AI assistant operating the OS. Convert the task description into specific GUI automation commands.
+            TaskType.COMMAND_PARSING.value: """You are an AI assistant that converts task descriptions into GUI automation commands.
 
-Task Description: {task_description}
+Task: {task_description}
 
 Current Screen: [Screenshot provided]
 Previous Screen: [previous screenshot provided]
 Previous Command: {previous_command}
 
-YOUR PREVIOUS ACTIONS - COMPLETED STEPS BY YOU:
-The following is a complete history of actions that YOU have already performed in this task. These are YOUR completed steps:
+YOUR COMPLETED ACTIONS:
 {previous_save_content}
 
-CRITICAL UNDERSTANDING - THESE ARE YOUR ACTIONS:
-- EVERY item in "YOUR PREVIOUS ACTIONS" is an action that YOU personally executed
-- These are COMPLETED steps in your current task progression
-- You MUST NOT repeat actions that are already completed
-- You MUST build upon these completed steps to progress forward
-- If you created a folder/file in previous actions, it now EXISTS and should be USED, not recreated
-
-CRITICAL - EXTRACTED INFORMATION ANALYSIS:
+EXTRACTED INFORMATION:
 {extracted_information}
 
-PRIORITY ANALYSIS OF EXTRACTED DATA:
-1. **IMMEDIATELY RELEVANT**: Filenames, URLs, error messages, confirmation codes - USE THESE NOW
-2. **CONTEXTUALLY IMPORTANT**: UI element states, window titles, button labels - REFERENCE THESE
-3. **PATTERNS TO FOLLOW**: Successful interaction methods, working coordinates - REPLICATE THESE
-4. **AVOID THESE**: Failed approaches, broken elements, incorrect coordinates - DO NOT REPEAT
-
-COORDINATES TO AVOID (previously failed):
+FAILED COORDINATES TO AVOID:
 {failure_coordinates}
 
-INTELLIGENT ACTION SELECTION:
-Based on the extracted information above:
-- If you have extracted filenames/URLs, prioritize actions that use them
-- If you have error messages, address the specific error mentioned
-- If you have confirmation codes, use them in the next action
-- If you have successful coordinates from similar actions, use those
-- If previous attempts failed, analyze WHY and choose a fundamentally different approach
-
-CRITICAL - AVOID REPEATING YOUR COMPLETED ACTIONS:
-Analyze "YOUR PREVIOUS ACTIONS" to identify:
-1. Actions that YOU have already completed successfully
-2. Objects that YOU have already created (folders, files, etc.)
-3. Steps that are already done and should not be repeated
-
-If you detect that you are trying to repeat an action you already completed:
-- STOP and recognize that the step is already done
-- Use the object/result you created in the next step
-- Move forward to the next logical step in the task
-- If no progress is possible, output END to stop execution
+KEY GUIDELINES:
+- Build upon YOUR completed actions - don't repeat what you've already done
+- Use extracted information (filenames, URLs, error messages) immediately
+- Avoid previously failed coordinates
+- Each command should be a single, specific action
 
 Available Commands:
 - click(x, y) - Click at normalized coordinates (0.0-1.0)
-- double_click(x, y) - Double-click at normalized coordinates
-- right_click(x, y) - Right-click at normalized coordinates
-- text("content") - Input text content
-- key(keys) - Press key combination (e.g., "ctrl+c", "enter", "cmd+space")
-- drag(start_x, start_y, end_x, end_y) - Drag from start to end coordinates
+- double_click(x, y) - Double-click
+- right_click(x, y) - Right-click  
+- text("content") - Type text
+- key(keys) - Press keys (e.g., "ctrl+c", "enter")
+- drag(start_x, start_y, end_x, end_y) - Drag
 - scroll(direction, amount) - Scroll (direction: up/down/left/right, amount: 1-10)
 - END - End task execution
 
-Use normalized coordinates (0.0-1.0). The top-left corner of the screen is (0.0, 0.0), the bottom-right corner is (1.0, 1.0).
-
-Convert the task description into the appropriate command. Assess the situation and output only one optimal command to execute next.
-
-IMPORTANT: You must use the following output format for every operation:
-Line 1: Reasoning: [Why this action is being taken, considering YOUR previous actions AND extracted information]
-Line 2: Target: [Specific target for the action]
+OUTPUT FORMAT (exactly 4 lines):
+Line 1: Reasoning: [Why this action, considering your previous actions and extracted info]
+Line 2: Target: [Specific target for the action]  
 Line 3: [The command to execute]
-Line 4: save("[Content describing YOUR action and any useful information for future reference"])
+Line 4: save("[Description of your action and useful information for future steps]")
 
-SAVE COMMAND - YOUR ACTION LOG:
-The save command is YOUR personal action log and reflection tool. Use it to:
-- Record YOUR completed actions for future reference
-- Preserve information about objects YOU created (folders, files, etc.)
-- Document results of YOUR actions for the next step
-- Store extracted information that YOU will need later
-- Create a trail of YOUR progress through the task
-
-This ensures YOU can track what YOU have already accomplished and avoid repeating completed steps.
-
-Do not output descriptions; output only the formatted 4-line structure. Write only one command per line.
-
-Example with learning from YOUR previous actions and extracted information:
-Reasoning: Based on my previous action, I created 'ProjectFolder' which now exists. I need to open this folder I created to continue the task.
-Target: ProjectFolder that I created in the previous step
+Example:
+Reasoning: I created 'ProjectFolder' in my previous action, so now I need to open it.
+Target: ProjectFolder I created earlier
 click(0.4, 0.6)
-save("Opened the ProjectFolder I created earlier, now ready for next step")
+save("Opened the ProjectFolder I created, ready for next step")
 
 END""",
             

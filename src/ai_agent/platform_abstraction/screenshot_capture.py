@@ -15,13 +15,16 @@ from datetime import datetime
 try:
     from PIL import Image, ImageDraw, ImageFont
 except ImportError:
-    raise ImportError("PIL (Pillow) is required for screenshot capture")
+    Image = None
+    ImageDraw = None
+    ImageFont = None
 
 try:
     import cv2
     import numpy as np
 except ImportError:
-    raise ImportError("OpenCV and numpy are required for screenshot capture")
+    cv2 = None
+    np = None
 
 from .platform_detector import get_system_info, get_platform_detector
 from ..utils.exceptions import ScreenshotError, PlatformError

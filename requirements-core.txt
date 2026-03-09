@@ -1,0 +1,11 @@
+# Core dependencies for VEXIS-1.2
+# Essential packages required for basic functionality
+
+# HTTP requests and API communication
+requests>=2.25.0
+
+# Image processing for vision capabilities
+Pillow>=8.0.0
+
+# Note: Standard library modules (pathlib, typing, dataclasses, curses, etc.) 
+# are automatically available and don't need to be listed here.

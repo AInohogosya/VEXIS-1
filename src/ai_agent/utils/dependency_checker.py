@@ -616,7 +616,7 @@ class DependencyChecker:
 
     def run_full_check(self, auto_install: bool = True) -> bool:
         """Run comprehensive dependency check"""
-        print("🚀 Starting dependency check for VEXIS-1.1 AI Agent\n")
+        print("🚀 Starting dependency check for VEXIS-1.2 AI Agent\n")
         
         # Check Python version
         py_ok, py_msg = self.check_python_version()

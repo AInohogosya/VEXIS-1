@@ -11,6 +11,7 @@ from typing import Dict, Any, Optional, Tuple
 from dataclasses import dataclass
 from ..utils.exceptions import PlatformError
 from ..utils.logger import get_logger
+from .keyboard_mapping import get_keyboard_mapping
 
 
 @dataclass
@@ -27,6 +28,7 @@ class SystemInfo:
     is_headless: bool = False
     is_container: bool = False
     is_virtual_machine: bool = False
+    keyboard_info: Optional[Dict[str, Any]] = None
 
 
 class PlatformDetector:
@@ -63,6 +65,9 @@ class PlatformDetector:
             is_container = self._detect_container()
             is_virtual_machine = self._detect_virtual_machine()
             
+            # Keyboard detection
+            keyboard_info = self._detect_keyboard_info()
+            
             system_info = SystemInfo(
                 os_name=os_name,
                 os_version=os_version,
@@ -75,6 +80,7 @@ class PlatformDetector:
                 is_headless=is_headless,
                 is_container=is_container,
                 is_virtual_machine=is_virtual_machine,
+                keyboard_info=keyboard_info,
             )
             
             self.logger.info(
@@ -89,6 +95,7 @@ class PlatformDetector:
                 is_headless=is_headless,
                 is_container=is_container,
                 is_virtual_machine=is_virtual_machine,
+                keyboard_keys=len(keyboard_info.get("available_keys", [])) if keyboard_info else 0,
             )
             
             return system_info
@@ -640,6 +647,23 @@ class PlatformDetector:
             self.logger.warning(f"Virtual machine detection failed: {e}")
             return False
     
+    def _detect_keyboard_info(self) -> Dict[str, Any]:
+        """Detect keyboard information and available keys"""
+        try:
+            keyboard_mapping = get_keyboard_mapping()
+            return keyboard_mapping.get_keyboard_info()
+        except Exception as e:
+            self.logger.warning(f"Keyboard detection failed: {e}")
+            return {
+                "os": platform.system().lower(),
+                "total_keys": 0,
+                "os_specific_keys": 0,
+                "common_keys": 0,
+                "available_keys": [],
+                "categories": {},
+                "error": str(e)
+            }
+    
     def get_platform_specific_config(self) -> Dict[str, Any]:
         """Get platform-specific configuration"""
         system_info = self.detect_system()
@@ -688,6 +712,14 @@ class PlatformDetector:
             "is_container": system_info.is_container,
             "is_virtual_machine": system_info.is_virtual_machine,
         })
+        
+        # Add keyboard configuration
+        if system_info.keyboard_info:
+            config.update({
+                "keyboard_info": system_info.keyboard_info,
+                "os_specific_keys": system_info.keyboard_info.get("available_keys", []),
+                "keyboard_categories": system_info.keyboard_info.get("categories", {}),
+            })
         
         return config
 

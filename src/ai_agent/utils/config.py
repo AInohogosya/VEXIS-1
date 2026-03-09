@@ -4,7 +4,10 @@ Zero-defect policy: comprehensive configuration with validation
 """
 
 import os
-import yaml
+try:
+    import yaml
+except ImportError:
+    yaml = None
 import json
 from typing import Dict, Any, Optional, Union
 from pathlib import Path

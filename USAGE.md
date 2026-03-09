@@ -1,6 +1,6 @@
 # Usage Guide
 
-> **Version Note**: This guide applies to VEXIS-1.1 v1.1, which uses simplified versioning with 0.0.1 increments omitted for easier maintenance.
+> **Version Note**: This guide applies to VEXIS-1.2 v1.2, which uses simplified versioning with 0.0.1 increments omitted for easier maintenance.
 
 ## Basic Execution
 
@@ -82,8 +82,8 @@ export AI_AGENT_SKIP_DEPS="true"
 python3 run.py "Take a test screenshot" --debug
 
 # Test installed commands
-vexis-1.1 --help
-vexis-1.1-enhanced --help
+vexis-1.2 --help
+vexis-1.2-enhanced --help
 
 # Check system status
 python3 -c "from ai_agent.utils.config import load_config; print('Config loaded successfully')"
@@ -96,8 +96,8 @@ python3 -c "from ai_agent.utils.config import load_config; print('Config loaded 
 python3 run.py --help
 
 # Show help for installed commands
-vexis-1.1 --help
-vexis-1.1-enhanced --help
+vexis-1.2 --help
+vexis-1.2-enhanced --help
 
 # Check configuration
 python3 -c "from ai_agent.utils.config import load_config; print(load_config())"

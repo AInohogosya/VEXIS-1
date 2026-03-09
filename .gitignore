@@ -210,12 +210,12 @@ pip-delete-this-directory.txt
 .dmypy.json
 dmypy.json
 
-# VEXIS-1.1 specific settings and credentials
+# VEXIS-1.2 specific settings and credentials
 .vexis/
 .vexis_settings.json
 
 # Requirements files (use pyproject.toml instead)
-requirements*.txt
+# requirements-core.txt
 
 # Temporary files from dependency installation
 *.tmp

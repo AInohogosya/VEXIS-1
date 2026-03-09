@@ -16,12 +16,12 @@ from enum import Enum
 try:
     import requests
 except ImportError:
-    raise ImportError("requests is required for Vision API client")
+    requests = None
 
 try:
     from PIL import Image
 except ImportError:
-    raise ImportError("PIL (Pillow) is required for Vision API client")
+    Image = None
 
 from ..utils.exceptions import APIError, ValidationError
 from ..utils.logger import get_logger
